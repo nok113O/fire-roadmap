@@ -6,7 +6,9 @@ const LOG_KEY = "fire-roadmap:log";
 
 export const defaultProfile: FireProfile = {
   currentAge: 30,
-  currentAssets: 1_000_000,
+  currentAssetsJpyManyen: 100,
+  currentAssetsCny: 0,
+  cnyExchangeRate: 20,
   monthlySavings: 100_000,
   annualReturnRate: 5,
   annualExpensesAtFire: 3_000_000,

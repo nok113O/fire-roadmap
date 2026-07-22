@@ -117,12 +117,60 @@ input[type="month"] {
   width: 100%;
 }
 
+.form-total-hint {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--text);
+}
+
 .log-form {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.bulk-import {
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.bulk-import summary {
+  cursor: pointer;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.bulk-import-hint {
+  font-size: 13px;
+  color: var(--text);
+  margin: 10px 0;
+}
+
+.bulk-import-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  resize: vertical;
+}
+
+.bulk-import-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.bulk-import-result {
+  font-size: 13px;
+  color: var(--text);
 }
 
 .btn-primary {

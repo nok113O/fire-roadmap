@@ -1,6 +1,8 @@
 export interface FireProfile {
   currentAge: number;
-  currentAssets: number;
+  currentAssetsJpyManyen: number; // 現在の資産(日本円建て、万円単位)
+  currentAssetsCny: number; // 現在の資産(人民元建て)
+  cnyExchangeRate: number; // 現在の為替レート(1CNY = ?円)
   monthlySavings: number;
   annualReturnRate: number; // %
   annualExpensesAtFire: number; // 目標支出(年額)
@@ -25,19 +27,35 @@ export interface RoadmapResult {
 }
 
 export interface MonthlyLogEntry {
-  date: string; // yyyy-mm
-  actualAssets: number;
+  date: string; // yyyy-mm(月末時点の記録)
+  assetsJpyManyen: number; // 日本円建て資産(万円)
+  assetsCny: number; // 人民元建て資産
+  exchangeRate: number; // その月末時点の為替レート(1CNY = ?円)
   memo?: string;
 }
 
 export interface LogComparison extends MonthlyLogEntry {
   monthIndex: number;
+  actualAssets: number; // 円換算の合計実績
   plannedAssets: number;
   diff: number; // actual - planned
   progressRate: number; // actual / fireNumber * 100
 }
 
 const MAX_MONTHS = 60 * 12;
+const MANYEN = 10_000;
+
+export function currentAssetsTotalYen(
+  profile: Pick<FireProfile, "currentAssetsJpyManyen" | "currentAssetsCny" | "cnyExchangeRate">,
+): number {
+  return profile.currentAssetsJpyManyen * MANYEN + profile.currentAssetsCny * profile.cnyExchangeRate;
+}
+
+export function logEntryAssetsTotalYen(
+  entry: Pick<MonthlyLogEntry, "assetsJpyManyen" | "assetsCny" | "exchangeRate">,
+): number {
+  return entry.assetsJpyManyen * MANYEN + entry.assetsCny * entry.exchangeRate;
+}
 
 export function calculateFireNumber(
   profile: Pick<FireProfile, "annualExpensesAtFire" | "safeWithdrawalRate">,
@@ -68,7 +86,7 @@ export function calculateRoadmap(profile: FireProfile): RoadmapResult {
   const monthlyReturnRate = Math.pow(1 + profile.annualReturnRate / 100, 1 / 12) - 1;
 
   const points: RoadmapPoint[] = [];
-  let assets = profile.currentAssets;
+  let assets = currentAssetsTotalYen(profile);
   let fireAchievedMonthIndex: number | null = assets >= fireNumber ? 0 : null;
 
   points.push({
@@ -119,15 +137,14 @@ export function compareLogWithPlan(
     .map((entry) => {
       const monthIndex = monthsBetween(profile.startDate, entry.date);
       const planned = plannedAssetsAt(roadmap, monthIndex);
+      const actualAssets = logEntryAssetsTotalYen(entry);
       return {
         ...entry,
         monthIndex,
+        actualAssets: Math.round(actualAssets),
         plannedAssets: Math.round(planned),
-        diff: Math.round(entry.actualAssets - planned),
-        progressRate:
-          roadmap.fireNumber > 0
-            ? Math.round((entry.actualAssets / roadmap.fireNumber) * 1000) / 10
-            : 0,
+        diff: Math.round(actualAssets - planned),
+        progressRate: roadmap.fireNumber > 0 ? Math.round((actualAssets / roadmap.fireNumber) * 1000) / 10 : 0,
       };
     });
 }
