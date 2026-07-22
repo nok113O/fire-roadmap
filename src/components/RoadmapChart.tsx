@@ -1,5 +1,6 @@
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { MonthlyLogEntry, RoadmapResult } from "../lib/fireCalc";
+import { logEntryAssetsTotalYen } from "../lib/fireCalc";
 import { formatYearMonth, formatYenCompact } from "../lib/format";
 
 interface Props {
@@ -22,10 +23,11 @@ export function RoadmapChart({ roadmap, log }: Props) {
   const byDate = new Map(chartData.map((d) => [d.date, d]));
   for (const entry of log) {
     const point = byDate.get(entry.date);
+    const actual = logEntryAssetsTotalYen(entry);
     if (point) {
-      point.actual = entry.actualAssets;
+      point.actual = actual;
     } else {
-      const newPoint: ChartPoint = { date: entry.date, actual: entry.actualAssets };
+      const newPoint: ChartPoint = { date: entry.date, actual };
       chartData.push(newPoint);
       byDate.set(entry.date, newPoint);
     }
