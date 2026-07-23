@@ -7,7 +7,7 @@ import { RoadmapChart } from "./components/RoadmapChart";
 import { SummaryCards } from "./components/SummaryCards";
 import type { FamilyMember, LifeEvent, LifeEventPreset } from "./lib/familyPlan";
 import type { AccountDef, FireProfile, MonthlyLogEntry } from "./lib/fireCalc";
-import { calculateRoadmap, latestLogSnapshot } from "./lib/fireCalc";
+import { addMonths, calculateRoadmap, currentAssetsSnapshot } from "./lib/fireCalc";
 import {
   loadAccounts,
   loadFamilyMembers,
@@ -38,9 +38,10 @@ function App() {
   useEffect(() => saveLifeEvents(lifeEvents), [lifeEvents]);
   useEffect(() => saveLifeEventPresets(eventPresets), [eventPresets]);
 
-  const snapshot = useMemo(() => latestLogSnapshot(log), [log]);
+  const previousMonth = useMemo(() => addMonths(profile.startDate, -1), [profile.startDate]);
+  const snapshot = useMemo(() => currentAssetsSnapshot(log, previousMonth), [log, previousMonth]);
 
-  // 記録済みの実績があれば、それを「現在の資産」として計画の起点に使う(なければ前提条件の手入力値)
+  // 前月分の実績記録があればそれを「現在の資産」として計画の起点に使う(無ければ最新の記録、記録が無ければ前提条件の手入力値)
   const effectiveProfile: FireProfile = useMemo(() => {
     if (!snapshot) return profile;
     return {
