@@ -179,6 +179,17 @@ function buildGoalResult(
   };
 }
 
+// 一度必要資産額に到達しても、将来の大きな支出(教育費など)で再び下回ることがあるため、
+// 「その月以降シミュレーション期間の終わりまでずっと必要資産額を維持できる」最初の月を達成とみなす
+function findSustainedAchievedMonthIndex(points: RoadmapPoint[], requiredAssets: number): number | null {
+  let lastBelowIndex = -1;
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].projectedAssets < requiredAssets) lastBelowIndex = i;
+  }
+  const sustainedIndex = lastBelowIndex + 1;
+  return sustainedIndex < points.length ? sustainedIndex : null;
+}
+
 export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] = []): RoadmapResult {
   const semiRequired = calculateRequiredAssets(
     profile.semiFireAnnualExpenses,
@@ -190,8 +201,6 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
 
   const points: RoadmapPoint[] = [];
   let assets = currentAssetsTotalYen(profile);
-  let semiAchievedMonthIndex: number | null = assets >= semiRequired ? 0 : null;
-  let fullAchievedMonthIndex: number | null = assets >= fullRequired ? 0 : null;
 
   points.push({
     monthIndex: 0,
@@ -200,11 +209,7 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
     projectedAssets: Math.round(assets),
   });
 
-  for (
-    let m = 1;
-    m <= MAX_MONTHS && (semiAchievedMonthIndex === null || fullAchievedMonthIndex === null);
-    m++
-  ) {
+  for (let m = 1; m <= MAX_MONTHS; m++) {
     const date = addMonths(profile.startDate, m);
     assets = assets * (1 + monthlyReturnRate) + profile.monthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
     points.push({
@@ -213,13 +218,10 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
       date,
       projectedAssets: Math.round(assets),
     });
-    if (semiAchievedMonthIndex === null && assets >= semiRequired) {
-      semiAchievedMonthIndex = m;
-    }
-    if (fullAchievedMonthIndex === null && assets >= fullRequired) {
-      fullAchievedMonthIndex = m;
-    }
   }
+
+  const semiAchievedMonthIndex = findSustainedAchievedMonthIndex(points, semiRequired);
+  const fullAchievedMonthIndex = findSustainedAchievedMonthIndex(points, fullRequired);
 
   return {
     points,
