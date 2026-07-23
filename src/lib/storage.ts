@@ -1,9 +1,12 @@
 import type { AccountDef, FireProfile, MonthlyLogEntry } from "./fireCalc";
 import { currentYearMonth } from "./fireCalc";
+import type { FamilyMember, LifeEvent } from "./familyPlan";
 
 const PROFILE_KEY = "fire-roadmap:profile";
 const LOG_KEY = "fire-roadmap:log";
 const ACCOUNTS_KEY = "fire-roadmap:accounts";
+const FAMILY_KEY = "fire-roadmap:family";
+const LIFE_EVENTS_KEY = "fire-roadmap:lifeEvents";
 
 export const defaultProfile: FireProfile = {
   currentAge: 30,
@@ -69,4 +72,32 @@ export function loadAccounts(): AccountDef[] {
 
 export function saveAccounts(accounts: AccountDef[]): void {
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+export function loadFamilyMembers(): FamilyMember[] {
+  try {
+    const raw = localStorage.getItem(FAMILY_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveFamilyMembers(members: FamilyMember[]): void {
+  localStorage.setItem(FAMILY_KEY, JSON.stringify(members));
+}
+
+export function loadLifeEvents(): LifeEvent[] {
+  try {
+    const raw = localStorage.getItem(LIFE_EVENTS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveLifeEvents(events: LifeEvent[]): void {
+  localStorage.setItem(LIFE_EVENTS_KEY, JSON.stringify(events));
 }

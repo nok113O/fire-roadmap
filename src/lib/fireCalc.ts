@@ -1,3 +1,9 @@
+import { addMonths, currentYearMonth, monthsBetween } from "./dateUtils";
+import type { LifeEvent } from "./familyPlan";
+import { monthlyLifeEventDeltaYen } from "./familyPlan";
+
+export { addMonths, currentYearMonth, monthsBetween };
+
 export interface FireProfile {
   currentAge: number;
   currentAssetsJpyManyen: number; // 現在の資産(日本円建て、万円単位)
@@ -85,24 +91,7 @@ export function calculateFireNumber(
   return profile.annualExpensesAtFire / (profile.safeWithdrawalRate / 100);
 }
 
-export function addMonths(yyyyMm: string, months: number): string {
-  const [y, m] = yyyyMm.split("-").map(Number);
-  const d = new Date(y, m - 1 + months, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-export function monthsBetween(from: string, to: string): number {
-  const [fy, fm] = from.split("-").map(Number);
-  const [ty, tm] = to.split("-").map(Number);
-  return (ty - fy) * 12 + (tm - fm);
-}
-
-export function currentYearMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-export function calculateRoadmap(profile: FireProfile): RoadmapResult {
+export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] = []): RoadmapResult {
   const fireNumber = calculateFireNumber(profile);
   const monthlyReturnRate = Math.pow(1 + profile.annualReturnRate / 100, 1 / 12) - 1;
 
@@ -118,11 +107,12 @@ export function calculateRoadmap(profile: FireProfile): RoadmapResult {
   });
 
   for (let m = 1; m <= MAX_MONTHS && fireAchievedMonthIndex === null; m++) {
-    assets = assets * (1 + monthlyReturnRate) + profile.monthlySavings;
+    const date = addMonths(profile.startDate, m);
+    assets = assets * (1 + monthlyReturnRate) + profile.monthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
     points.push({
       monthIndex: m,
       age: Math.round((profile.currentAge + m / 12) * 10) / 10,
-      date: addMonths(profile.startDate, m),
+      date,
       projectedAssets: Math.round(assets),
     });
     if (assets >= fireNumber) {
