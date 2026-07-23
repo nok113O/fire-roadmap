@@ -135,6 +135,20 @@ input:disabled {
   color: var(--text-h);
 }
 
+.reverse-calc {
+  margin-top: 16px;
+}
+
+.reverse-calc .form-field {
+  max-width: 200px;
+}
+
+.reverse-calc-result {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
 .chart-wrap {
   width: 100%;
 }

@@ -1,13 +1,30 @@
-import type { FireGoalResult, RoadmapResult } from "../lib/fireCalc";
-import { formatYearMonth, formatYenCompact } from "../lib/format";
+import { useState } from "react";
+import type { FireGoalResult, FireProfile, RoadmapResult } from "../lib/fireCalc";
+import { calculateRequiredMonthlySavings, currentAssetsTotalYen } from "../lib/fireCalc";
+import { formatYearMonth, formatYen, formatYenCompact } from "../lib/format";
 
 interface Props {
   roadmap: RoadmapResult;
-  currentAge: number;
+  profile: FireProfile;
 }
 
-function GoalSummary({ label, goal, currentAge }: { label: string; goal: FireGoalResult; currentAge: number }) {
-  const yearsToGoal = goal.achievedAge != null ? (goal.achievedAge - currentAge).toFixed(1) : null;
+function GoalSummary({ label, goal, profile }: { label: string; goal: FireGoalResult; profile: FireProfile }) {
+  const [targetAge, setTargetAge] = useState("");
+
+  const yearsToGoal = goal.achievedAge != null ? (goal.achievedAge - profile.currentAge).toFixed(1) : null;
+
+  const targetAgeNum = Number(targetAge);
+  const hasValidTargetAge = targetAge.trim() !== "" && !Number.isNaN(targetAgeNum);
+  const months = hasValidTargetAge ? Math.round((targetAgeNum - profile.currentAge) * 12) : null;
+  const requiredMonthlySavings =
+    months != null && months > 0
+      ? calculateRequiredMonthlySavings(
+          currentAssetsTotalYen(profile),
+          goal.requiredAssets,
+          profile.annualReturnRate,
+          months,
+        )
+      : null;
 
   return (
     <div className="summary-goal">
@@ -32,15 +49,49 @@ function GoalSummary({ label, goal, currentAge }: { label: string; goal: FireGoa
           <span className="summary-value">{yearsToGoal != null ? `あと${yearsToGoal}年` : "—"}</span>
         </div>
       </div>
+
+      <div className="reverse-calc">
+        <label className="form-field">
+          <span className="form-label">目標年齢から必要積立額を逆算</span>
+          <div className="form-input-wrap">
+            <input
+              type="number"
+              step={0.5}
+              placeholder="例: 45"
+              value={targetAge}
+              onChange={(e) => setTargetAge(e.target.value)}
+            />
+            <span className="form-suffix">歳</span>
+          </div>
+        </label>
+        {months != null && months <= 0 && (
+          <p className="reverse-calc-result">現在の年齢より後の年齢を指定してください</p>
+        )}
+        {requiredMonthlySavings != null &&
+          (requiredMonthlySavings <= 0 ? (
+            <p className="reverse-calc-result">
+              {targetAgeNum}歳の時点では、追加の積立をしなくても目標資産に到達見込みです
+            </p>
+          ) : (
+            <p className="reverse-calc-result">
+              {targetAgeNum}歳までに達成するには、毎月{formatYen(requiredMonthlySavings)}の積立が必要です(現在の設定:
+              毎月{formatYen(profile.monthlySavings)}
+              {requiredMonthlySavings > profile.monthlySavings
+                ? `、あと毎月${formatYen(requiredMonthlySavings - profile.monthlySavings)}の上積みが必要です`
+                : "、現在の設定で達成可能です"}
+              )
+            </p>
+          ))}
+      </div>
     </div>
   );
 }
 
-export function SummaryCards({ roadmap, currentAge }: Props) {
+export function SummaryCards({ roadmap, profile }: Props) {
   return (
     <section className="card">
-      <GoalSummary label="セミFIRE" goal={roadmap.semiFire} currentAge={currentAge} />
-      <GoalSummary label="完全FIRE" goal={roadmap.fullFire} currentAge={currentAge} />
+      <GoalSummary label="セミFIRE" goal={roadmap.semiFire} profile={profile} />
+      <GoalSummary label="完全FIRE" goal={roadmap.fullFire} profile={profile} />
     </section>
   );
 }
