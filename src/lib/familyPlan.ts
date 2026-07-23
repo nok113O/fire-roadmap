@@ -1,4 +1,4 @@
-import { addMonths, monthsBetween } from "./dateUtils";
+import { monthsBetween } from "./dateUtils";
 
 export interface FamilyMember {
   id: string;
@@ -69,9 +69,15 @@ export const educationStages = [
 
 export type EducationStageKey = (typeof educationStages)[number]["key"];
 
+// 入学は4月、卒業は3月という日本の学年暦に合わせて開始・終了月を計算する
+// (4月以降生まれは満startAge歳になった翌年の4月入学、1〜3月生まれは同年4月入学という簡易ルール)
 export function computeStageDates(birthDate: string, startAge: number, years: number): { startDate: string; endDate: string } {
-  const startDate = addMonths(birthDate, startAge * 12);
-  const endDate = addMonths(startDate, years * 12 - 1);
+  const [birthYearStr, birthMonthStr] = birthDate.split("-");
+  const birthYear = Number(birthYearStr);
+  const birthMonth = Number(birthMonthStr);
+  const entryYear = birthYear + startAge + (birthMonth <= 3 ? 0 : 1);
+  const startDate = `${entryYear}-04`;
+  const endDate = `${entryYear + years}-03`;
   return { startDate, endDate };
 }
 

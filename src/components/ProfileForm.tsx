@@ -4,6 +4,7 @@ import type { FireProfile, LatestLogSnapshot } from "../lib/fireCalc";
 import { currentAssetsTotalYen } from "../lib/fireCalc";
 import { formatYearMonth } from "../lib/format";
 import { parseNumberInput } from "../lib/numberInput";
+import { CommaNumberInput } from "./CommaNumberInput";
 
 interface Props {
   profile: FireProfile;
@@ -17,21 +18,22 @@ interface FieldDef {
   label: string;
   suffix: string;
   step?: number;
+  commaFormat?: boolean;
 }
 
 const baseFields: FieldDef[] = [
-  { key: "monthlySavings", label: "毎月の貯蓄額", suffix: "円/月" },
+  { key: "monthlySavings", label: "毎月の貯蓄額", suffix: "円/月", commaFormat: true },
   { key: "annualReturnRate", label: "想定年利回り", suffix: "%", step: 0.1 },
 ];
 
 const semiFireFields: FieldDef[] = [
-  { key: "semiFireAnnualExpenses", label: "セミFIRE後の年間支出", suffix: "円/年" },
-  { key: "semiFirePartTimeIncome", label: "セミFIRE後の就労収入", suffix: "円/年" },
+  { key: "semiFireAnnualExpenses", label: "セミFIRE後の年間支出", suffix: "円/年", commaFormat: true },
+  { key: "semiFirePartTimeIncome", label: "セミFIRE後の就労収入", suffix: "円/年", commaFormat: true },
   { key: "semiFireSafeWithdrawalRate", label: "安全引出率(SWR)", suffix: "%", step: 0.1 },
 ];
 
 const fullFireFields: FieldDef[] = [
-  { key: "fullFireAnnualExpenses", label: "完全FIRE後の年間支出", suffix: "円/年" },
+  { key: "fullFireAnnualExpenses", label: "完全FIRE後の年間支出", suffix: "円/年", commaFormat: true },
   { key: "fullFireSafeWithdrawalRate", label: "安全引出率(SWR)", suffix: "%", step: 0.1 },
 ];
 
@@ -50,12 +52,19 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: P
     <label key={field.key} className="form-field">
       <span className="form-label">{field.label}</span>
       <div className="form-input-wrap">
-        <input
-          type="number"
-          step={field.step ?? 1}
-          value={profile[field.key] as number}
-          onChange={(e) => update(field.key, parseNumberInput(e))}
-        />
+        {field.commaFormat ? (
+          <CommaNumberInput
+            value={String(profile[field.key] as number)}
+            onChange={(raw) => update(field.key, raw === "" || raw === "-" ? 0 : Number(raw))}
+          />
+        ) : (
+          <input
+            type="number"
+            step={field.step ?? 1}
+            value={profile[field.key] as number}
+            onChange={(e) => update(field.key, parseNumberInput(e))}
+          />
+        )}
         <span className="form-suffix">{field.suffix}</span>
       </div>
     </label>
@@ -77,12 +86,11 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: P
         <label className="form-field">
           <span className="form-label">現在の資産(日本+中国合算){latestSnapshot ? "(実績記録)" : ""}</span>
           <div className="form-input-wrap">
-            <input
-              type="number"
+            <CommaNumberInput
               disabled={!!latestSnapshot}
-              value={Math.round(effectiveTotal)}
-              onChange={(e) => {
-                const yen = parseNumberInput(e);
+              value={String(Math.round(effectiveTotal))}
+              onChange={(raw) => {
+                const yen = raw === "" || raw === "-" ? 0 : Number(raw);
                 onChange({ ...profile, currentAssetsJpyManyen: yen / 10_000, currentAssetsCny: 0 });
               }}
             />

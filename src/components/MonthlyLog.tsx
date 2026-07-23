@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AccountDef, FireProfile, MonthlyLogEntry, RoadmapResult } from "../lib/fireCalc";
 import { compareLogWithPlan, currentYearMonth } from "../lib/fireCalc";
 import { formatYearMonth, formatYen } from "../lib/format";
+import { CommaNumberInput } from "./CommaNumberInput";
 
 interface Props {
   profile: FireProfile;
@@ -208,23 +209,23 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
         </label>
         <label className="form-field">
           <span className="form-label">日本 収入</span>
-          <input type="number" placeholder="万円" value={jpyIncome} onChange={(e) => setJpyIncome(e.target.value)} />
+          <CommaNumberInput placeholder="万円" value={jpyIncome} onChange={setJpyIncome} />
         </label>
         <label className="form-field">
           <span className="form-label">日本 支出</span>
-          <input type="number" placeholder="万円" value={jpyExpense} onChange={(e) => setJpyExpense(e.target.value)} />
+          <CommaNumberInput placeholder="万円" value={jpyExpense} onChange={setJpyExpense} />
         </label>
         <label className="form-field">
           <span className="form-label">中国 資産</span>
-          <input type="number" placeholder="元(CNY)" value={cnyAssets} onChange={(e) => setCnyAssets(e.target.value)} />
+          <CommaNumberInput placeholder="元(CNY)" value={cnyAssets} onChange={setCnyAssets} />
         </label>
         <label className="form-field">
           <span className="form-label">中国 収入</span>
-          <input type="number" placeholder="元(CNY)" value={cnyIncome} onChange={(e) => setCnyIncome(e.target.value)} />
+          <CommaNumberInput placeholder="元(CNY)" value={cnyIncome} onChange={setCnyIncome} />
         </label>
         <label className="form-field">
           <span className="form-label">中国 支出</span>
-          <input type="number" placeholder="元(CNY)" value={cnyExpense} onChange={(e) => setCnyExpense(e.target.value)} />
+          <CommaNumberInput placeholder="元(CNY)" value={cnyExpense} onChange={setCnyExpense} />
         </label>
         <label className="form-field">
           <span className="form-label">為替レート</span>
@@ -245,11 +246,10 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
               {account.name}
               {account.excludeFromTotal ? "(FIRE計算対象外)" : ""}
             </span>
-            <input
-              type="number"
+            <CommaNumberInput
               placeholder="万円"
               value={accountInputs[account.id] ?? ""}
-              onChange={(e) => setAccountInputs({ ...accountInputs, [account.id]: e.target.value })}
+              onChange={(raw) => setAccountInputs({ ...accountInputs, [account.id]: raw })}
             />
           </label>
         ))}
