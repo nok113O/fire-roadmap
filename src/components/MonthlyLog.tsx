@@ -77,7 +77,8 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
   const [bulkText, setBulkText] = useState("");
   const [bulkResult, setBulkResult] = useState<string | null>(null);
 
-  const comparisons = compareLogWithPlan(profile, roadmap, log).slice().reverse();
+  const excludedAccountIds = new Set(accounts.filter((a) => a.excludeFromTotal).map((a) => a.id));
+  const comparisons = compareLogWithPlan(profile, roadmap, log, excludedAccountIds).slice().reverse();
 
   const addAccount = () => {
     const name = newAccountName.trim();
@@ -88,6 +89,10 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
 
   const renameAccount = (id: string, name: string) => {
     onAccountsChange(accounts.map((a) => (a.id === id ? { ...a, name } : a)));
+  };
+
+  const toggleAccountExclude = (id: string, excludeFromTotal: boolean) => {
+    onAccountsChange(accounts.map((a) => (a.id === id ? { ...a, excludeFromTotal } : a)));
   };
 
   const removeAccount = (id: string) => {
@@ -169,6 +174,14 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
                 value={account.name}
                 onChange={(e) => renameAccount(account.id, e.target.value)}
               />
+              <label className="account-exclude-toggle">
+                <input
+                  type="checkbox"
+                  checked={!!account.excludeFromTotal}
+                  onChange={(e) => toggleAccountExclude(account.id, e.target.checked)}
+                />
+                FIRE計算から除外
+              </label>
               <button type="button" className="btn-icon" onClick={() => removeAccount(account.id)}>
                 削除
               </button>
@@ -228,7 +241,10 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
       <div className="log-form">
         {accounts.map((account) => (
           <label key={account.id} className="form-field">
-            <span className="form-label">{account.name}</span>
+            <span className="form-label">
+              {account.name}
+              {account.excludeFromTotal ? "(FIRE計算対象外)" : ""}
+            </span>
             <input
               type="number"
               placeholder="万円"

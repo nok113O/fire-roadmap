@@ -39,8 +39,16 @@ function App() {
   useEffect(() => saveLifeEvents(lifeEvents), [lifeEvents]);
   useEffect(() => saveLifeEventPresets(eventPresets), [eventPresets]);
 
+  const excludedAccountIds = useMemo(
+    () => new Set(accounts.filter((a) => a.excludeFromTotal).map((a) => a.id)),
+    [accounts],
+  );
+
   const previousMonth = useMemo(() => addMonths(profile.startDate, -1), [profile.startDate]);
-  const snapshot = useMemo(() => currentAssetsSnapshot(log, previousMonth), [log, previousMonth]);
+  const snapshot = useMemo(
+    () => currentAssetsSnapshot(log, previousMonth, excludedAccountIds),
+    [log, previousMonth, excludedAccountIds],
+  );
 
   const selfMember = useMemo(() => findSelfMember(familyMembers), [familyMembers]);
 
@@ -87,7 +95,7 @@ function App() {
           onPresetsChange={setEventPresets}
         />
         <SummaryCards roadmap={roadmap} profile={effectiveProfile} />
-        <RoadmapChart roadmap={roadmap} log={log} />
+        <RoadmapChart roadmap={roadmap} log={log} excludedAccountIds={excludedAccountIds} />
         <MonthlyLog
           profile={profile}
           roadmap={roadmap}
