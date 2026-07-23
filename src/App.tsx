@@ -86,7 +86,7 @@ function App() {
           presets={eventPresets}
           onPresetsChange={setEventPresets}
         />
-        <SummaryCards roadmap={roadmap} currentAge={effectiveProfile.currentAge} />
+        <SummaryCards roadmap={roadmap} profile={effectiveProfile} />
         <RoadmapChart roadmap={roadmap} log={log} />
         <MonthlyLog
           profile={profile}

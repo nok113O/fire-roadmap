@@ -131,6 +131,24 @@ export function calculateRequiredAssets(annualExpenses: number, safeWithdrawalRa
   return netAnnualNeed / (safeWithdrawalRate / 100);
 }
 
+// 目標資産額に、指定した月数以内で到達するために必要な毎月積立額を逆算する
+// 目標資産額 = 現在資産×(1+月利)^月数 + 毎月積立額×{(1+月利)^月数-1}/月利 の式をPMTについて解く
+export function calculateRequiredMonthlySavings(
+  currentAssets: number,
+  requiredAssets: number,
+  annualReturnRate: number,
+  months: number,
+): number {
+  if (months <= 0) return requiredAssets > currentAssets ? Infinity : 0;
+  const monthlyReturnRate = Math.pow(1 + annualReturnRate / 100, 1 / 12) - 1;
+  const futureValueOfCurrent = currentAssets * Math.pow(1 + monthlyReturnRate, months);
+  const shortfall = requiredAssets - futureValueOfCurrent;
+  if (shortfall <= 0) return 0;
+  if (monthlyReturnRate === 0) return shortfall / months;
+  const annuityFactor = (Math.pow(1 + monthlyReturnRate, months) - 1) / monthlyReturnRate;
+  return shortfall / annuityFactor;
+}
+
 function buildGoalResult(
   profile: FireProfile,
   requiredAssets: number,
