@@ -101,18 +101,29 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
     }
     const cny = Number(cnyAssets) || 0;
     const rate = Number(exchangeRate);
-    if (!date || Number.isNaN(rate)) return;
+    const income = Number(jpyIncome) || 0;
+    const expense = Number(jpyExpense) || 0;
+    const cnyIn = Number(cnyIncome) || 0;
+    const cnyOut = Number(cnyExpense) || 0;
+    const hasAnyValue =
+      Object.values(jpyAccountBalances).some((v) => v !== 0) ||
+      cny !== 0 ||
+      income !== 0 ||
+      expense !== 0 ||
+      cnyIn !== 0 ||
+      cnyOut !== 0;
+    if (!date || Number.isNaN(rate) || !hasAnyValue) return;
 
     onChange(
       upsertEntries(log, [
         {
           date,
           jpyAccountBalances,
-          jpyIncome: Number(jpyIncome) || 0,
-          jpyExpense: Number(jpyExpense) || 0,
+          jpyIncome: income,
+          jpyExpense: expense,
           cnyAssets: cny,
-          cnyIncome: Number(cnyIncome) || 0,
-          cnyExpense: Number(cnyExpense) || 0,
+          cnyIncome: cnyIn,
+          cnyExpense: cnyOut,
           exchangeRate: rate,
           memo: memo || undefined,
         },
