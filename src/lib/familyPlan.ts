@@ -60,6 +60,7 @@ export const defaultLifeEventPresets: LifeEventPreset[] = [
 ];
 
 export const educationStages = [
+  { key: "kindergarten", label: "幼稚園", startAge: 3, years: 3 },
   { key: "elementary", label: "小学校", startAge: 6, years: 6 },
   { key: "juniorhigh", label: "中学校", startAge: 12, years: 3 },
   { key: "highschool", label: "高校", startAge: 15, years: 3 },
