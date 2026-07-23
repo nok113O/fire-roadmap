@@ -1,3 +1,9 @@
+import { addMonths, currentYearMonth, monthsBetween } from "./dateUtils";
+import type { LifeEvent } from "./familyPlan";
+import { monthlyLifeEventDeltaYen } from "./familyPlan";
+
+export { addMonths, currentYearMonth, monthsBetween };
+
 export interface FireProfile {
   currentAge: number;
   currentAssetsJpyManyen: number; // 現在の資産(日本円建て、万円単位)
@@ -26,16 +32,28 @@ export interface RoadmapResult {
   fireAchievedDate: string | null;
 }
 
+export interface AccountDef {
+  id: string;
+  name: string;
+}
+
 export interface MonthlyLogEntry {
   date: string; // yyyy-mm(月末時点の記録)
-  assetsJpyManyen: number; // 日本円建て資産(万円)
-  assetsCny: number; // 人民元建て資産
+  jpyAccountBalances: Record<string, number>; // 口座id -> 万円
+  jpyIncome: number; // 万円/月
+  jpyExpense: number; // 万円/月
+  cnyAssets: number; // 人民元建て資産
+  cnyIncome: number; // 元/月
+  cnyExpense: number; // 元/月
   exchangeRate: number; // その月末時点の為替レート(1CNY = ?円)
   memo?: string;
 }
 
 export interface LogComparison extends MonthlyLogEntry {
   monthIndex: number;
+  jpyAssetsManyen: number;
+  jpySavingsRate: number; // %
+  cnySavingsRate: number; // %
   actualAssets: number; // 円換算の合計実績
   plannedAssets: number;
   diff: number; // actual - planned
@@ -51,10 +69,19 @@ export function currentAssetsTotalYen(
   return profile.currentAssetsJpyManyen * MANYEN + profile.currentAssetsCny * profile.cnyExchangeRate;
 }
 
+export function sumJpyAccountBalances(balances: Record<string, number>): number {
+  return Object.values(balances).reduce((sum, v) => sum + v, 0);
+}
+
+export function savingsRatePercent(income: number, expense: number): number {
+  if (income <= 0) return 0;
+  return Math.round(((income - expense) / income) * 1000) / 10;
+}
+
 export function logEntryAssetsTotalYen(
-  entry: Pick<MonthlyLogEntry, "assetsJpyManyen" | "assetsCny" | "exchangeRate">,
+  entry: Pick<MonthlyLogEntry, "jpyAccountBalances" | "cnyAssets" | "exchangeRate">,
 ): number {
-  return entry.assetsJpyManyen * MANYEN + entry.assetsCny * entry.exchangeRate;
+  return sumJpyAccountBalances(entry.jpyAccountBalances) * MANYEN + entry.cnyAssets * entry.exchangeRate;
 }
 
 export function calculateFireNumber(
@@ -64,24 +91,7 @@ export function calculateFireNumber(
   return profile.annualExpensesAtFire / (profile.safeWithdrawalRate / 100);
 }
 
-export function addMonths(yyyyMm: string, months: number): string {
-  const [y, m] = yyyyMm.split("-").map(Number);
-  const d = new Date(y, m - 1 + months, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-export function monthsBetween(from: string, to: string): number {
-  const [fy, fm] = from.split("-").map(Number);
-  const [ty, tm] = to.split("-").map(Number);
-  return (ty - fy) * 12 + (tm - fm);
-}
-
-export function currentYearMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-export function calculateRoadmap(profile: FireProfile): RoadmapResult {
+export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] = []): RoadmapResult {
   const fireNumber = calculateFireNumber(profile);
   const monthlyReturnRate = Math.pow(1 + profile.annualReturnRate / 100, 1 / 12) - 1;
 
@@ -97,11 +107,12 @@ export function calculateRoadmap(profile: FireProfile): RoadmapResult {
   });
 
   for (let m = 1; m <= MAX_MONTHS && fireAchievedMonthIndex === null; m++) {
-    assets = assets * (1 + monthlyReturnRate) + profile.monthlySavings;
+    const date = addMonths(profile.startDate, m);
+    assets = assets * (1 + monthlyReturnRate) + profile.monthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
     points.push({
       monthIndex: m,
       age: Math.round((profile.currentAge + m / 12) * 10) / 10,
-      date: addMonths(profile.startDate, m),
+      date,
       projectedAssets: Math.round(assets),
     });
     if (assets >= fireNumber) {
@@ -141,6 +152,9 @@ export function compareLogWithPlan(
       return {
         ...entry,
         monthIndex,
+        jpyAssetsManyen: sumJpyAccountBalances(entry.jpyAccountBalances),
+        jpySavingsRate: savingsRatePercent(entry.jpyIncome, entry.jpyExpense),
+        cnySavingsRate: savingsRatePercent(entry.cnyIncome, entry.cnyExpense),
         actualAssets: Math.round(actualAssets),
         plannedAssets: Math.round(planned),
         diff: Math.round(actualAssets - planned),

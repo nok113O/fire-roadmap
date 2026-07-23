@@ -1,8 +1,12 @@
-import type { FireProfile, MonthlyLogEntry } from "./fireCalc";
+import type { AccountDef, FireProfile, MonthlyLogEntry } from "./fireCalc";
 import { currentYearMonth } from "./fireCalc";
+import type { FamilyMember, LifeEvent } from "./familyPlan";
 
 const PROFILE_KEY = "fire-roadmap:profile";
 const LOG_KEY = "fire-roadmap:log";
+const ACCOUNTS_KEY = "fire-roadmap:accounts";
+const FAMILY_KEY = "fire-roadmap:family";
+const LIFE_EVENTS_KEY = "fire-roadmap:lifeEvents";
 
 export const defaultProfile: FireProfile = {
   currentAge: 30,
@@ -15,6 +19,17 @@ export const defaultProfile: FireProfile = {
   safeWithdrawalRate: 4,
   startDate: currentYearMonth(),
 };
+
+export const defaultAccounts: AccountDef[] = [
+  { id: "mufj", name: "三菱UFJ" },
+  { id: "rakuten", name: "楽天" },
+  { id: "sony", name: "ソニー銀行" },
+  { id: "yucho", name: "ゆうちょ銀行" },
+  { id: "dc", name: "企業型確定拠出年金" },
+  { id: "smbc", name: "三井住友銀行" },
+  { id: "sbishinsei", name: "SBI新生銀行" },
+  { id: "cash", name: "現金" },
+];
 
 export function loadProfile(): FireProfile {
   try {
@@ -42,4 +57,47 @@ export function loadLog(): MonthlyLogEntry[] {
 
 export function saveLog(log: MonthlyLogEntry[]): void {
   localStorage.setItem(LOG_KEY, JSON.stringify(log));
+}
+
+export function loadAccounts(): AccountDef[] {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (!raw) return defaultAccounts;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultAccounts;
+  } catch {
+    return defaultAccounts;
+  }
+}
+
+export function saveAccounts(accounts: AccountDef[]): void {
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+export function loadFamilyMembers(): FamilyMember[] {
+  try {
+    const raw = localStorage.getItem(FAMILY_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveFamilyMembers(members: FamilyMember[]): void {
+  localStorage.setItem(FAMILY_KEY, JSON.stringify(members));
+}
+
+export function loadLifeEvents(): LifeEvent[] {
+  try {
+    const raw = localStorage.getItem(LIFE_EVENTS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveLifeEvents(events: LifeEvent[]): void {
+  localStorage.setItem(LIFE_EVENTS_KEY, JSON.stringify(events));
 }

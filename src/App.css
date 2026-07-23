@@ -35,6 +35,16 @@
   text-align: left;
 }
 
+.card h3 {
+  font-size: 16px;
+  margin: 20px 0 10px;
+  color: var(--text-h);
+}
+
+.card h3:first-of-type {
+  margin-top: 4px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -69,7 +79,8 @@ button {
 
 input[type="number"],
 input[type="text"],
-input[type="month"] {
+input[type="month"],
+select {
   width: 100%;
   padding: 8px 10px;
   border-radius: 6px;
@@ -171,6 +182,23 @@ input[type="month"] {
 .bulk-import-result {
   font-size: 13px;
   color: var(--text);
+}
+
+.account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-row input[type="text"] {
+  flex: 1;
 }
 
 .btn-primary {
