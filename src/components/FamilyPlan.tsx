@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FamilyMember, LifeEvent, LifeEventCategory, LifeEventPreset } from "../lib/familyPlan";
 import { computeStageDates, educationStages, lifeEventCategoryLabels } from "../lib/familyPlan";
 import { formatYearMonth } from "../lib/format";
-import { parseNumberInput } from "../lib/numberInput";
+import { CommaNumberInput } from "./CommaNumberInput";
 
 interface Props {
   members: FamilyMember[];
@@ -215,10 +215,11 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
                 <option value="one_time">一時金</option>
                 <option value="recurring">継続(年額)</option>
               </select>
-              <input
-                type="number"
-                value={preset.amountManyen}
-                onChange={(e) => updatePreset(preset.id, { amountManyen: parseNumberInput(e) })}
+              <CommaNumberInput
+                value={String(preset.amountManyen)}
+                onChange={(raw) =>
+                  updatePreset(preset.id, { amountManyen: raw === "" || raw === "-" ? 0 : Number(raw) })
+                }
               />
               <span className="preset-note">{preset.note}</span>
               <button type="button" className="btn-icon" onClick={() => removePreset(preset.id)}>
@@ -244,12 +245,7 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
               <option value="one_time">一時金</option>
               <option value="recurring">継続(年額)</option>
             </select>
-            <input
-              type="number"
-              placeholder="万円"
-              value={newPresetAmount}
-              onChange={(e) => setNewPresetAmount(e.target.value)}
-            />
+            <CommaNumberInput placeholder="万円" value={newPresetAmount} onChange={setNewPresetAmount} />
             <input
               type="text"
               placeholder="メモ(任意)"
@@ -337,11 +333,10 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
         </label>
         <label className="form-field">
           <span className="form-label">金額</span>
-          <input
-            type="number"
+          <CommaNumberInput
             placeholder={eventKind === "recurring" ? "万円/年" : "万円(総額)"}
             value={eventAmount}
-            onChange={(e) => setEventAmount(e.target.value)}
+            onChange={setEventAmount}
           />
         </label>
         <label className="form-field">

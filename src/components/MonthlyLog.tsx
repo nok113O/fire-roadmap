@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AccountDef, FireProfile, MonthlyLogEntry, RoadmapResult } from "../lib/fireCalc";
 import { compareLogWithPlan, currentYearMonth } from "../lib/fireCalc";
 import { formatYearMonth, formatYen } from "../lib/format";
+import { CommaNumberInput } from "./CommaNumberInput";
 
 interface Props {
   profile: FireProfile;
@@ -77,7 +78,8 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
   const [bulkText, setBulkText] = useState("");
   const [bulkResult, setBulkResult] = useState<string | null>(null);
 
-  const comparisons = compareLogWithPlan(profile, roadmap, log).slice().reverse();
+  const excludedAccountIds = new Set(accounts.filter((a) => a.excludeFromTotal).map((a) => a.id));
+  const comparisons = compareLogWithPlan(profile, roadmap, log, excludedAccountIds).slice().reverse();
 
   const addAccount = () => {
     const name = newAccountName.trim();
@@ -88,6 +90,10 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
 
   const renameAccount = (id: string, name: string) => {
     onAccountsChange(accounts.map((a) => (a.id === id ? { ...a, name } : a)));
+  };
+
+  const toggleAccountExclude = (id: string, excludeFromTotal: boolean) => {
+    onAccountsChange(accounts.map((a) => (a.id === id ? { ...a, excludeFromTotal } : a)));
   };
 
   const removeAccount = (id: string) => {
@@ -169,6 +175,14 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
                 value={account.name}
                 onChange={(e) => renameAccount(account.id, e.target.value)}
               />
+              <label className="account-exclude-toggle">
+                <input
+                  type="checkbox"
+                  checked={!!account.excludeFromTotal}
+                  onChange={(e) => toggleAccountExclude(account.id, e.target.checked)}
+                />
+                FIRE計算から除外
+              </label>
               <button type="button" className="btn-icon" onClick={() => removeAccount(account.id)}>
                 削除
               </button>
@@ -195,23 +209,23 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
         </label>
         <label className="form-field">
           <span className="form-label">日本 収入</span>
-          <input type="number" placeholder="万円" value={jpyIncome} onChange={(e) => setJpyIncome(e.target.value)} />
+          <CommaNumberInput placeholder="万円" value={jpyIncome} onChange={setJpyIncome} />
         </label>
         <label className="form-field">
           <span className="form-label">日本 支出</span>
-          <input type="number" placeholder="万円" value={jpyExpense} onChange={(e) => setJpyExpense(e.target.value)} />
+          <CommaNumberInput placeholder="万円" value={jpyExpense} onChange={setJpyExpense} />
         </label>
         <label className="form-field">
           <span className="form-label">中国 資産</span>
-          <input type="number" placeholder="元(CNY)" value={cnyAssets} onChange={(e) => setCnyAssets(e.target.value)} />
+          <CommaNumberInput placeholder="元(CNY)" value={cnyAssets} onChange={setCnyAssets} />
         </label>
         <label className="form-field">
           <span className="form-label">中国 収入</span>
-          <input type="number" placeholder="元(CNY)" value={cnyIncome} onChange={(e) => setCnyIncome(e.target.value)} />
+          <CommaNumberInput placeholder="元(CNY)" value={cnyIncome} onChange={setCnyIncome} />
         </label>
         <label className="form-field">
           <span className="form-label">中国 支出</span>
-          <input type="number" placeholder="元(CNY)" value={cnyExpense} onChange={(e) => setCnyExpense(e.target.value)} />
+          <CommaNumberInput placeholder="元(CNY)" value={cnyExpense} onChange={setCnyExpense} />
         </label>
         <label className="form-field">
           <span className="form-label">為替レート</span>
@@ -228,12 +242,14 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
       <div className="log-form">
         {accounts.map((account) => (
           <label key={account.id} className="form-field">
-            <span className="form-label">{account.name}</span>
-            <input
-              type="number"
+            <span className="form-label">
+              {account.name}
+              {account.excludeFromTotal ? "(FIRE計算対象外)" : ""}
+            </span>
+            <CommaNumberInput
               placeholder="万円"
               value={accountInputs[account.id] ?? ""}
-              onChange={(e) => setAccountInputs({ ...accountInputs, [account.id]: e.target.value })}
+              onChange={(raw) => setAccountInputs({ ...accountInputs, [account.id]: raw })}
             />
           </label>
         ))}

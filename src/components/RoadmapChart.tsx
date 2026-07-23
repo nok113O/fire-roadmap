@@ -6,6 +6,7 @@ import { formatYearMonth, formatYenCompact } from "../lib/format";
 interface Props {
   roadmap: RoadmapResult;
   log: MonthlyLogEntry[];
+  excludedAccountIds?: Set<string>;
 }
 
 interface ChartPoint {
@@ -14,7 +15,7 @@ interface ChartPoint {
   actual?: number;
 }
 
-export function RoadmapChart({ roadmap, log }: Props) {
+export function RoadmapChart({ roadmap, log, excludedAccountIds }: Props) {
   const chartData: ChartPoint[] = roadmap.points.map((p) => ({
     date: p.date,
     planned: p.projectedAssets,
@@ -23,7 +24,7 @@ export function RoadmapChart({ roadmap, log }: Props) {
   const byDate = new Map(chartData.map((d) => [d.date, d]));
   for (const entry of log) {
     const point = byDate.get(entry.date);
-    const actual = logEntryAssetsTotalYen(entry);
+    const actual = logEntryAssetsTotalYen(entry, excludedAccountIds);
     if (point) {
       point.actual = actual;
     } else {

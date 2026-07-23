@@ -45,6 +45,7 @@ export interface RoadmapResult {
 export interface AccountDef {
   id: string;
   name: string;
+  excludeFromTotal?: boolean; // 子供名義の口座など、FIRE計算の合計から除外したい場合にtrue
 }
 
 export interface MonthlyLogEntry {
@@ -79,9 +80,15 @@ export function currentAssetsTotalYen(
   return profile.currentAssetsJpyManyen * MANYEN + profile.currentAssetsCny * profile.cnyExchangeRate;
 }
 
-export function sumJpyAccountBalances(balances: Record<string, number> | undefined): number {
+export function sumJpyAccountBalances(
+  balances: Record<string, number> | undefined,
+  excludedAccountIds?: Set<string>,
+): number {
   if (!balances) return 0;
-  return Object.values(balances).reduce((sum, v) => sum + (typeof v === "number" ? v : 0), 0);
+  return Object.entries(balances).reduce((sum, [accountId, v]) => {
+    if (excludedAccountIds?.has(accountId)) return sum;
+    return sum + (typeof v === "number" ? v : 0);
+  }, 0);
 }
 
 export interface LatestLogSnapshot {
@@ -91,27 +98,34 @@ export interface LatestLogSnapshot {
   exchangeRate: number;
 }
 
-function toSnapshot(entry: MonthlyLogEntry): LatestLogSnapshot {
+function toSnapshot(entry: MonthlyLogEntry, excludedAccountIds?: Set<string>): LatestLogSnapshot {
   return {
     date: entry.date,
-    jpyManyen: sumJpyAccountBalances(entry.jpyAccountBalances),
+    jpyManyen: sumJpyAccountBalances(entry.jpyAccountBalances, excludedAccountIds),
     cny: entry.cnyAssets,
     exchangeRate: entry.exchangeRate,
   };
 }
 
 // 記録済みの実績のうち最新月のものを、現在の資産の代わりに使うためのスナップショットとして返す
-export function latestLogSnapshot(log: MonthlyLogEntry[]): LatestLogSnapshot | null {
+export function latestLogSnapshot(
+  log: MonthlyLogEntry[],
+  excludedAccountIds?: Set<string>,
+): LatestLogSnapshot | null {
   if (log.length === 0) return null;
   const latest = log.slice().sort((a, b) => a.date.localeCompare(b.date))[log.length - 1];
-  return toSnapshot(latest);
+  return toSnapshot(latest, excludedAccountIds);
 }
 
 // 前月分の実績記録があればそれを優先し、無ければ最新の記録を使う
-export function currentAssetsSnapshot(log: MonthlyLogEntry[], previousMonth: string): LatestLogSnapshot | null {
+export function currentAssetsSnapshot(
+  log: MonthlyLogEntry[],
+  previousMonth: string,
+  excludedAccountIds?: Set<string>,
+): LatestLogSnapshot | null {
   const exact = log.find((entry) => entry.date === previousMonth);
-  if (exact) return toSnapshot(exact);
-  return latestLogSnapshot(log);
+  if (exact) return toSnapshot(exact, excludedAccountIds);
+  return latestLogSnapshot(log, excludedAccountIds);
 }
 
 export function savingsRatePercent(income: number, expense: number): number {
@@ -121,8 +135,9 @@ export function savingsRatePercent(income: number, expense: number): number {
 
 export function logEntryAssetsTotalYen(
   entry: Pick<MonthlyLogEntry, "jpyAccountBalances" | "cnyAssets" | "exchangeRate">,
+  excludedAccountIds?: Set<string>,
 ): number {
-  return sumJpyAccountBalances(entry.jpyAccountBalances) * MANYEN + entry.cnyAssets * entry.exchangeRate;
+  return sumJpyAccountBalances(entry.jpyAccountBalances, excludedAccountIds) * MANYEN + entry.cnyAssets * entry.exchangeRate;
 }
 
 export function calculateRequiredAssets(annualExpenses: number, safeWithdrawalRate: number, partTimeIncome = 0): number {
@@ -225,6 +240,7 @@ export function compareLogWithPlan(
   profile: FireProfile,
   roadmap: RoadmapResult,
   log: MonthlyLogEntry[],
+  excludedAccountIds?: Set<string>,
 ): LogComparison[] {
   return log
     .slice()
@@ -232,11 +248,11 @@ export function compareLogWithPlan(
     .map((entry) => {
       const monthIndex = monthsBetween(profile.startDate, entry.date);
       const planned = plannedAssetsAt(roadmap, monthIndex);
-      const actualAssets = logEntryAssetsTotalYen(entry);
+      const actualAssets = logEntryAssetsTotalYen(entry, excludedAccountIds);
       return {
         ...entry,
         monthIndex,
-        jpyAssetsManyen: sumJpyAccountBalances(entry.jpyAccountBalances),
+        jpyAssetsManyen: sumJpyAccountBalances(entry.jpyAccountBalances, excludedAccountIds),
         jpySavingsRate: savingsRatePercent(entry.jpyIncome, entry.jpyExpense),
         cnySavingsRate: savingsRatePercent(entry.cnyIncome, entry.cnyExpense),
         actualAssets: Math.round(actualAssets),
