@@ -1,12 +1,14 @@
 import type { AccountDef, FireProfile, MonthlyLogEntry } from "./fireCalc";
 import { currentYearMonth } from "./fireCalc";
-import type { FamilyMember, LifeEvent } from "./familyPlan";
+import type { FamilyMember, LifeEvent, LifeEventPreset } from "./familyPlan";
+import { defaultLifeEventPresets } from "./familyPlan";
 
 const PROFILE_KEY = "fire-roadmap:profile";
 const LOG_KEY = "fire-roadmap:log";
 const ACCOUNTS_KEY = "fire-roadmap:accounts";
 const FAMILY_KEY = "fire-roadmap:family";
 const LIFE_EVENTS_KEY = "fire-roadmap:lifeEvents";
+const EVENT_PRESETS_KEY = "fire-roadmap:eventPresets";
 
 export const defaultProfile: FireProfile = {
   currentAge: 30,
@@ -15,9 +17,14 @@ export const defaultProfile: FireProfile = {
   cnyExchangeRate: 20,
   monthlySavings: 100_000,
   annualReturnRate: 5,
-  annualExpensesAtFire: 3_000_000,
-  safeWithdrawalRate: 4,
   startDate: currentYearMonth(),
+
+  semiFireAnnualExpenses: 2_400_000,
+  semiFireSafeWithdrawalRate: 3.5,
+  semiFirePartTimeIncome: 1_200_000,
+
+  fullFireAnnualExpenses: 3_000_000,
+  fullFireSafeWithdrawalRate: 4,
 };
 
 export const defaultAccounts: AccountDef[] = [
@@ -35,7 +42,18 @@ export function loadProfile(): FireProfile {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (!raw) return defaultProfile;
-    return { ...defaultProfile, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    const merged: FireProfile = { ...defaultProfile, ...parsed };
+
+    // セミFIRE/完全FIRE導入前の「FIRE後の年間支出」「安全引出率」は完全FIRE側に引き継ぐ
+    if (parsed.fullFireAnnualExpenses === undefined && typeof parsed.annualExpensesAtFire === "number") {
+      merged.fullFireAnnualExpenses = parsed.annualExpensesAtFire;
+    }
+    if (parsed.fullFireSafeWithdrawalRate === undefined && typeof parsed.safeWithdrawalRate === "number") {
+      merged.fullFireSafeWithdrawalRate = parsed.safeWithdrawalRate;
+    }
+
+    return merged;
   } catch {
     return defaultProfile;
   }
@@ -126,4 +144,19 @@ export function loadLifeEvents(): LifeEvent[] {
 
 export function saveLifeEvents(events: LifeEvent[]): void {
   localStorage.setItem(LIFE_EVENTS_KEY, JSON.stringify(events));
+}
+
+export function loadLifeEventPresets(): LifeEventPreset[] {
+  try {
+    const raw = localStorage.getItem(EVENT_PRESETS_KEY);
+    if (!raw) return defaultLifeEventPresets;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultLifeEventPresets;
+  } catch {
+    return defaultLifeEventPresets;
+  }
+}
+
+export function saveLifeEventPresets(presets: LifeEventPreset[]): void {
+  localStorage.setItem(EVENT_PRESETS_KEY, JSON.stringify(presets));
 }

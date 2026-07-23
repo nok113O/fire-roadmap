@@ -28,6 +28,37 @@ export interface LifeEvent {
   memo?: string;
 }
 
+export interface LifeEventPreset {
+  id: string;
+  name: string;
+  category: LifeEventCategory;
+  kind: "one_time" | "recurring";
+  amountManyen: number; // one_time: 総額(万円) / recurring: 年間額(万円/年)
+  note?: string;
+}
+
+// 一般的なライフイベントの支出目安(万円)。あくまで目安のため各自編集して利用する想定。
+// 出典: 文部科学省「令和5年度子供の学習費調査」、大学学費は各種銀行・進学情報サイトの公表資料、
+// 結婚式費用はゼクシィ結婚トレンド調査、出産費用・新車価格は厚生労働省・日本自動車工業会の公表資料を参考にした概算値。
+export const defaultLifeEventPresets: LifeEventPreset[] = [
+  { id: "preset_kinder_public", name: "幼稚園(公立)", category: "education", kind: "recurring", amountManyen: 18.5, note: "年額目安・3年間" },
+  { id: "preset_kinder_private", name: "幼稚園(私立)", category: "education", kind: "recurring", amountManyen: 34.7, note: "年額目安・3年間" },
+  { id: "preset_elementary_public", name: "小学校(公立)", category: "education", kind: "recurring", amountManyen: 33.6, note: "年額目安・6年間" },
+  { id: "preset_elementary_private", name: "小学校(私立)", category: "education", kind: "recurring", amountManyen: 182.8, note: "年額目安・6年間" },
+  { id: "preset_juniorhigh_public", name: "中学校(公立)", category: "education", kind: "recurring", amountManyen: 54.2, note: "年額目安・3年間" },
+  { id: "preset_juniorhigh_private", name: "中学校(私立)", category: "education", kind: "recurring", amountManyen: 156, note: "年額目安・3年間" },
+  { id: "preset_highschool_public", name: "高校(公立)", category: "education", kind: "recurring", amountManyen: 59.8, note: "年額目安・3年間" },
+  { id: "preset_highschool_private", name: "高校(私立)", category: "education", kind: "recurring", amountManyen: 103, note: "年額目安・3年間" },
+  { id: "preset_university_national", name: "大学(国公立)", category: "education", kind: "recurring", amountManyen: 62.5, note: "年額目安・4年間" },
+  { id: "preset_university_private_arts", name: "大学(私立文系)", category: "education", kind: "recurring", amountManyen: 102.5, note: "年額目安・4年間" },
+  { id: "preset_university_private_science", name: "大学(私立理系)", category: "education", kind: "recurring", amountManyen: 135.3, note: "年額目安・4年間" },
+  { id: "preset_wedding", name: "結婚式(自己負担目安)", category: "other", kind: "one_time", amountManyen: 125, note: "総額目安343.9万円のうち自己負担分" },
+  { id: "preset_childbirth", name: "出産費用(自己負担目安)", category: "other", kind: "one_time", amountManyen: 10, note: "出産育児一時金50万円差引後。差額ベッド代等で変動" },
+  { id: "preset_car_standard", name: "車購入(普通車)", category: "car", kind: "one_time", amountManyen: 330, note: "新車平均価格目安" },
+  { id: "preset_car_kei", name: "車購入(軽自動車)", category: "car", kind: "one_time", amountManyen: 200, note: "新車平均価格目安" },
+  { id: "preset_housing_downpayment", name: "住宅購入(頭金目安)", category: "housing", kind: "one_time", amountManyen: 500, note: "物件価格・地域により大きく変動" },
+];
+
 export const educationStages = [
   { key: "elementary", label: "小学校", startAge: 6, years: 6 },
   { key: "juniorhigh", label: "中学校", startAge: 12, years: 3 },

@@ -11,9 +11,14 @@ export interface FireProfile {
   cnyExchangeRate: number; // 現在の為替レート(1CNY = ?円)
   monthlySavings: number;
   annualReturnRate: number; // %
-  annualExpensesAtFire: number; // 目標支出(年額)
-  safeWithdrawalRate: number; // %
   startDate: string; // yyyy-mm, plan の起点
+
+  semiFireAnnualExpenses: number; // セミFIRE後の年間支出(円)
+  semiFireSafeWithdrawalRate: number; // セミFIREの安全引出率(%)
+  semiFirePartTimeIncome: number; // セミFIRE後の就労収入(円/年)
+
+  fullFireAnnualExpenses: number; // 完全FIRE後の年間支出(円)
+  fullFireSafeWithdrawalRate: number; // 完全FIREの安全引出率(%)
 }
 
 export interface RoadmapPoint {
@@ -23,13 +28,18 @@ export interface RoadmapPoint {
   projectedAssets: number;
 }
 
+export interface FireGoalResult {
+  requiredAssets: number;
+  achieved: boolean;
+  achievedMonthIndex: number | null;
+  achievedAge: number | null;
+  achievedDate: string | null;
+}
+
 export interface RoadmapResult {
-  fireNumber: number;
   points: RoadmapPoint[];
-  fireAchieved: boolean;
-  fireAchievedMonthIndex: number | null;
-  fireAchievedAge: number | null;
-  fireAchievedDate: string | null;
+  semiFire: FireGoalResult;
+  fullFire: FireGoalResult;
 }
 
 export interface AccountDef {
@@ -57,7 +67,7 @@ export interface LogComparison extends MonthlyLogEntry {
   actualAssets: number; // 円換算の合計実績
   plannedAssets: number;
   diff: number; // actual - planned
-  progressRate: number; // actual / fireNumber * 100
+  progressRate: number; // actual / 完全FIRE必要資産額 * 100
 }
 
 const MAX_MONTHS = 60 * 12;
@@ -85,20 +95,40 @@ export function logEntryAssetsTotalYen(
   return sumJpyAccountBalances(entry.jpyAccountBalances) * MANYEN + entry.cnyAssets * entry.exchangeRate;
 }
 
-export function calculateFireNumber(
-  profile: Pick<FireProfile, "annualExpensesAtFire" | "safeWithdrawalRate">,
-): number {
-  if (profile.safeWithdrawalRate <= 0) return 0;
-  return profile.annualExpensesAtFire / (profile.safeWithdrawalRate / 100);
+export function calculateRequiredAssets(annualExpenses: number, safeWithdrawalRate: number, partTimeIncome = 0): number {
+  if (safeWithdrawalRate <= 0) return 0;
+  const netAnnualNeed = Math.max(0, annualExpenses - partTimeIncome);
+  return netAnnualNeed / (safeWithdrawalRate / 100);
+}
+
+function buildGoalResult(
+  profile: FireProfile,
+  requiredAssets: number,
+  achievedMonthIndex: number | null,
+): FireGoalResult {
+  const achieved = achievedMonthIndex !== null;
+  return {
+    requiredAssets,
+    achieved,
+    achievedMonthIndex,
+    achievedAge: achieved ? Math.round((profile.currentAge + achievedMonthIndex! / 12) * 10) / 10 : null,
+    achievedDate: achieved ? addMonths(profile.startDate, achievedMonthIndex!) : null,
+  };
 }
 
 export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] = []): RoadmapResult {
-  const fireNumber = calculateFireNumber(profile);
+  const semiRequired = calculateRequiredAssets(
+    profile.semiFireAnnualExpenses,
+    profile.semiFireSafeWithdrawalRate,
+    profile.semiFirePartTimeIncome,
+  );
+  const fullRequired = calculateRequiredAssets(profile.fullFireAnnualExpenses, profile.fullFireSafeWithdrawalRate);
   const monthlyReturnRate = Math.pow(1 + profile.annualReturnRate / 100, 1 / 12) - 1;
 
   const points: RoadmapPoint[] = [];
   let assets = currentAssetsTotalYen(profile);
-  let fireAchievedMonthIndex: number | null = assets >= fireNumber ? 0 : null;
+  let semiAchievedMonthIndex: number | null = assets >= semiRequired ? 0 : null;
+  let fullAchievedMonthIndex: number | null = assets >= fullRequired ? 0 : null;
 
   points.push({
     monthIndex: 0,
@@ -107,7 +137,11 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
     projectedAssets: Math.round(assets),
   });
 
-  for (let m = 1; m <= MAX_MONTHS && fireAchievedMonthIndex === null; m++) {
+  for (
+    let m = 1;
+    m <= MAX_MONTHS && (semiAchievedMonthIndex === null || fullAchievedMonthIndex === null);
+    m++
+  ) {
     const date = addMonths(profile.startDate, m);
     assets = assets * (1 + monthlyReturnRate) + profile.monthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
     points.push({
@@ -116,18 +150,19 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
       date,
       projectedAssets: Math.round(assets),
     });
-    if (assets >= fireNumber) {
-      fireAchievedMonthIndex = m;
+    if (semiAchievedMonthIndex === null && assets >= semiRequired) {
+      semiAchievedMonthIndex = m;
+    }
+    if (fullAchievedMonthIndex === null && assets >= fullRequired) {
+      fullAchievedMonthIndex = m;
     }
   }
 
-  const fireAchieved = fireAchievedMonthIndex !== null;
-  const fireAchievedAge = fireAchieved
-    ? Math.round((profile.currentAge + fireAchievedMonthIndex! / 12) * 10) / 10
-    : null;
-  const fireAchievedDate = fireAchieved ? addMonths(profile.startDate, fireAchievedMonthIndex!) : null;
-
-  return { fireNumber, points, fireAchieved, fireAchievedMonthIndex, fireAchievedAge, fireAchievedDate };
+  return {
+    points,
+    semiFire: buildGoalResult(profile, semiRequired, semiAchievedMonthIndex),
+    fullFire: buildGoalResult(profile, fullRequired, fullAchievedMonthIndex),
+  };
 }
 
 function plannedAssetsAt(roadmap: RoadmapResult, monthIndex: number): number {
@@ -159,7 +194,10 @@ export function compareLogWithPlan(
         actualAssets: Math.round(actualAssets),
         plannedAssets: Math.round(planned),
         diff: Math.round(actualAssets - planned),
-        progressRate: roadmap.fireNumber > 0 ? Math.round((actualAssets / roadmap.fireNumber) * 1000) / 10 : 0,
+        progressRate:
+          roadmap.fullFire.requiredAssets > 0
+            ? Math.round((actualAssets / roadmap.fullFire.requiredAssets) * 1000) / 10
+            : 0,
       };
     });
 }

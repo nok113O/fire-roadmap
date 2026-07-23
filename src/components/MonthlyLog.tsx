@@ -280,14 +280,12 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
               <tr>
                 <th>年月</th>
                 <th>日本合計(万円)</th>
-                <th>日本貯蓄率</th>
                 <th>中国(CNY)</th>
-                <th>中国貯蓄率</th>
                 <th>レート</th>
                 <th>実績合計</th>
                 <th>計画</th>
                 <th>差分</th>
-                <th>進捗率</th>
+                <th>進捗率(完全FIRE)</th>
                 <th>メモ</th>
                 <th></th>
               </tr>
@@ -297,9 +295,7 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
                 <tr key={row.date}>
                   <td>{formatYearMonth(row.date)}</td>
                   <td>{row.jpyAssetsManyen.toLocaleString("ja-JP")}</td>
-                  <td>{row.jpySavingsRate}%</td>
                   <td>{row.cnyAssets.toLocaleString("ja-JP")}</td>
-                  <td>{row.cnySavingsRate}%</td>
                   <td>{row.exchangeRate}</td>
                   <td>{formatYen(row.actualAssets)}</td>
                   <td>{formatYen(row.plannedAssets)}</td>

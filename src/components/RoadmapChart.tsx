@@ -1,4 +1,4 @@
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { MonthlyLogEntry, RoadmapResult } from "../lib/fireCalc";
 import { logEntryAssetsTotalYen } from "../lib/fireCalc";
 import { formatYearMonth, formatYenCompact } from "../lib/format";
@@ -51,6 +51,18 @@ export function RoadmapChart({ roadmap, log }: Props) {
               labelFormatter={(label) => formatYearMonth(label as string)}
             />
             <Legend formatter={(value) => (value === "planned" ? "計画" : "実績")} />
+            <ReferenceLine
+              y={roadmap.semiFire.requiredAssets}
+              stroke="#059669"
+              strokeDasharray="4 4"
+              label={{ value: "セミFIRE", position: "insideTopLeft", fill: "#059669", fontSize: 12 }}
+            />
+            <ReferenceLine
+              y={roadmap.fullFire.requiredAssets}
+              stroke="#a855f7"
+              strokeDasharray="4 4"
+              label={{ value: "完全FIRE", position: "insideTopLeft", fill: "#a855f7", fontSize: 12 }}
+            />
             <Line type="monotone" dataKey="planned" stroke="#2563eb" dot={false} strokeWidth={2} />
             <Line type="monotone" dataKey="actual" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls />
           </LineChart>

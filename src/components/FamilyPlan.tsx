@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FamilyMember, LifeEvent, LifeEventCategory } from "../lib/familyPlan";
+import type { FamilyMember, LifeEvent, LifeEventCategory, LifeEventPreset } from "../lib/familyPlan";
 import { computeStageDates, educationStages, lifeEventCategoryLabels } from "../lib/familyPlan";
 import { formatYearMonth } from "../lib/format";
 
@@ -8,17 +8,20 @@ interface Props {
   onMembersChange: (members: FamilyMember[]) => void;
   events: LifeEvent[];
   onEventsChange: (events: LifeEvent[]) => void;
+  presets: LifeEventPreset[];
+  onPresetsChange: (presets: LifeEventPreset[]) => void;
 }
 
 function makeId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function FamilyPlan({ members, onMembersChange, events, onEventsChange }: Props) {
+export function FamilyPlan({ members, onMembersChange, events, onEventsChange, presets, onPresetsChange }: Props) {
   const [memberName, setMemberName] = useState("");
   const [memberRelation, setMemberRelation] = useState("");
   const [memberBirthDate, setMemberBirthDate] = useState("");
 
+  const [presetId, setPresetId] = useState("");
   const [eventName, setEventName] = useState("");
   const [eventCategory, setEventCategory] = useState<LifeEventCategory>("education");
   const [eventKind, setEventKind] = useState<"one_time" | "recurring">("one_time");
@@ -28,6 +31,12 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange }:
   const [linkedMemberId, setLinkedMemberId] = useState("");
   const [stageKey, setStageKey] = useState("");
   const [eventMemo, setEventMemo] = useState("");
+
+  const [newPresetName, setNewPresetName] = useState("");
+  const [newPresetCategory, setNewPresetCategory] = useState<LifeEventCategory>("other");
+  const [newPresetKind, setNewPresetKind] = useState<"one_time" | "recurring">("one_time");
+  const [newPresetAmount, setNewPresetAmount] = useState("");
+  const [newPresetNote, setNewPresetNote] = useState("");
 
   const addMember = () => {
     if (!memberName.trim() || !memberBirthDate) return;
@@ -54,6 +63,16 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange }:
     if (!eventName) setEventName(`${member.name} ${stage.label}`);
   };
 
+  const applyEventPreset = (id: string) => {
+    setPresetId(id);
+    const preset = presets.find((p) => p.id === id);
+    if (!preset) return;
+    setEventName(preset.name);
+    setEventCategory(preset.category);
+    setEventKind(preset.kind);
+    setEventAmount(String(preset.amountManyen));
+  };
+
   const addEvent = () => {
     const amount = Number(eventAmount);
     if (!eventName.trim() || !eventStartDate || Number.isNaN(amount)) return;
@@ -71,6 +90,7 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange }:
         memo: eventMemo || undefined,
       },
     ]);
+    setPresetId("");
     setEventName("");
     setEventAmount("");
     setEventStartDate("");
@@ -79,6 +99,32 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange }:
   };
 
   const removeEvent = (id: string) => onEventsChange(events.filter((e) => e.id !== id));
+
+  const addPreset = () => {
+    const name = newPresetName.trim();
+    const amount = Number(newPresetAmount);
+    if (!name || Number.isNaN(amount)) return;
+    onPresetsChange([
+      ...presets,
+      {
+        id: makeId("preset"),
+        name,
+        category: newPresetCategory,
+        kind: newPresetKind,
+        amountManyen: amount,
+        note: newPresetNote.trim() || undefined,
+      },
+    ]);
+    setNewPresetName("");
+    setNewPresetAmount("");
+    setNewPresetNote("");
+  };
+
+  const updatePreset = (id: string, patch: Partial<LifeEventPreset>) => {
+    onPresetsChange(presets.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  };
+
+  const removePreset = (id: string) => onPresetsChange(presets.filter((p) => p.id !== id));
 
   return (
     <section className="card">
@@ -137,6 +183,85 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange }:
       )}
 
       <h3>ライフイベント</h3>
+
+      <details className="bulk-import">
+        <summary>支出目安マスタを管理</summary>
+        <p className="bulk-import-hint">
+          一般的なライフイベントの支出目安(万円)です。ご自身の実態に合わせて金額を編集したり、追加・削除できます。
+        </p>
+        <div className="account-list">
+          {presets.map((preset) => (
+            <div key={preset.id} className="preset-row">
+              <input
+                type="text"
+                value={preset.name}
+                onChange={(e) => updatePreset(preset.id, { name: e.target.value })}
+              />
+              <select
+                value={preset.category}
+                onChange={(e) => updatePreset(preset.id, { category: e.target.value as LifeEventCategory })}
+              >
+                {Object.entries(lifeEventCategoryLabels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={preset.kind}
+                onChange={(e) => updatePreset(preset.id, { kind: e.target.value as "one_time" | "recurring" })}
+              >
+                <option value="one_time">一時金</option>
+                <option value="recurring">継続(年額)</option>
+              </select>
+              <input
+                type="number"
+                value={preset.amountManyen}
+                onChange={(e) => updatePreset(preset.id, { amountManyen: Number(e.target.value) || 0 })}
+              />
+              <span className="preset-note">{preset.note}</span>
+              <button type="button" className="btn-icon" onClick={() => removePreset(preset.id)}>
+                削除
+              </button>
+            </div>
+          ))}
+          <div className="preset-row">
+            <input
+              type="text"
+              placeholder="新しい項目名"
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.target.value)}
+            />
+            <select value={newPresetCategory} onChange={(e) => setNewPresetCategory(e.target.value as LifeEventCategory)}>
+              {Object.entries(lifeEventCategoryLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <select value={newPresetKind} onChange={(e) => setNewPresetKind(e.target.value as "one_time" | "recurring")}>
+              <option value="one_time">一時金</option>
+              <option value="recurring">継続(年額)</option>
+            </select>
+            <input
+              type="number"
+              placeholder="万円"
+              value={newPresetAmount}
+              onChange={(e) => setNewPresetAmount(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="メモ(任意)"
+              value={newPresetNote}
+              onChange={(e) => setNewPresetNote(e.target.value)}
+            />
+            <button type="button" className="btn-icon" onClick={addPreset}>
+              追加
+            </button>
+          </div>
+        </div>
+      </details>
+
       {members.length > 0 && (
         <div className="log-form">
           <label className="form-field">
@@ -172,6 +297,17 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange }:
         </div>
       )}
       <div className="log-form">
+        <label className="form-field">
+          <span className="form-label">支出目安から選択</span>
+          <select value={presetId} onChange={(e) => applyEventPreset(e.target.value)}>
+            <option value="">(選択して自動入力)</option>
+            {presets.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.name}({preset.amountManyen.toLocaleString("ja-JP")}万円{preset.kind === "recurring" ? "/年" : ""})
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="form-field">
           <span className="form-label">名称</span>
           <input
