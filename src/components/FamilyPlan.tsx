@@ -99,6 +99,10 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
     setEventMemo("");
   };
 
+  const updateEvent = (id: string, patch: Partial<LifeEvent>) => {
+    onEventsChange(events.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  };
+
   const removeEvent = (id: string) => onEventsChange(events.filter((e) => e.id !== id));
 
   const addPreset = () => {
@@ -381,16 +385,85 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
                 .sort((a, b) => a.startDate.localeCompare(b.startDate))
                 .map((ev) => (
                   <tr key={ev.id}>
-                    <td>{ev.name}</td>
-                    <td>{lifeEventCategoryLabels[ev.category]}</td>
-                    <td>{ev.kind === "one_time" ? "一時金" : "継続"}</td>
                     <td>
-                      {ev.amountManyen.toLocaleString("ja-JP")}万円
-                      {ev.kind === "recurring" ? "/年" : ""}
+                      <input
+                        type="text"
+                        className="table-edit-input"
+                        value={ev.name}
+                        onChange={(e) => updateEvent(ev.id, { name: e.target.value })}
+                      />
                     </td>
-                    <td>{formatYearMonth(ev.startDate)}</td>
-                    <td>{ev.endDate ? formatYearMonth(ev.endDate) : "-"}</td>
-                    <td>{members.find((m) => m.id === ev.linkedMemberId)?.name ?? ""}</td>
+                    <td>
+                      <select
+                        className="table-edit-input"
+                        value={ev.category}
+                        onChange={(e) => updateEvent(ev.id, { category: e.target.value as LifeEventCategory })}
+                      >
+                        {Object.entries(lifeEventCategoryLabels).map(([key, label]) => (
+                          <option key={key} value={key}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        className="table-edit-input"
+                        value={ev.kind}
+                        onChange={(e) =>
+                          updateEvent(ev.id, {
+                            kind: e.target.value as "one_time" | "recurring",
+                            endDate: e.target.value === "one_time" ? undefined : ev.endDate,
+                          })
+                        }
+                      >
+                        <option value="one_time">一時金</option>
+                        <option value="recurring">継続</option>
+                      </select>
+                    </td>
+                    <td className="table-edit-amount">
+                      <CommaNumberInput
+                        value={String(ev.amountManyen)}
+                        onChange={(raw) =>
+                          updateEvent(ev.id, { amountManyen: raw === "" || raw === "-" ? 0 : Number(raw) })
+                        }
+                      />
+                      万円{ev.kind === "recurring" ? "/年" : ""}
+                    </td>
+                    <td>
+                      <input
+                        type="month"
+                        className="table-edit-input"
+                        value={ev.startDate}
+                        onChange={(e) => updateEvent(ev.id, { startDate: e.target.value })}
+                      />
+                    </td>
+                    <td>
+                      {ev.kind === "recurring" ? (
+                        <input
+                          type="month"
+                          className="table-edit-input"
+                          value={ev.endDate ?? ""}
+                          onChange={(e) => updateEvent(ev.id, { endDate: e.target.value || undefined })}
+                        />
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td>
+                      <select
+                        className="table-edit-input"
+                        value={ev.linkedMemberId ?? ""}
+                        onChange={(e) => updateEvent(ev.id, { linkedMemberId: e.target.value || undefined })}
+                      >
+                        <option value="">(なし)</option>
+                        {members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td>
                       <button type="button" className="btn-icon" onClick={() => removeEvent(ev.id)}>
                         削除

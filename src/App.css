@@ -322,6 +322,26 @@ th {
   color: var(--text);
 }
 
+.table-edit-input {
+  width: 100%;
+  min-width: 90px;
+  font-size: 14px;
+  padding: 4px 6px;
+}
+
+.table-edit-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.table-edit-amount .table-edit-input,
+.table-edit-amount input {
+  width: 90px;
+  min-width: 90px;
+}
+
 .diff-positive {
   color: #16a34a;
 }
