@@ -1,11 +1,15 @@
+import type { FamilyMember } from "../lib/familyPlan";
+import { calculateAgeAt } from "../lib/familyPlan";
 import type { FireProfile, LatestLogSnapshot } from "../lib/fireCalc";
 import { currentAssetsTotalYen } from "../lib/fireCalc";
 import { formatYearMonth, formatYenCompact } from "../lib/format";
+import { parseNumberInput } from "../lib/numberInput";
 
 interface Props {
   profile: FireProfile;
   onChange: (profile: FireProfile) => void;
   latestSnapshot: LatestLogSnapshot | null;
+  selfMember: FamilyMember | undefined;
 }
 
 interface FieldDef {
@@ -16,7 +20,6 @@ interface FieldDef {
 }
 
 const baseFields: FieldDef[] = [
-  { key: "currentAge", label: "現在の年齢", suffix: "歳" },
   { key: "monthlySavings", label: "毎月の貯蓄額", suffix: "円/月" },
   { key: "annualReturnRate", label: "想定年利回り", suffix: "%", step: 0.1 },
 ];
@@ -32,7 +35,7 @@ const fullFireFields: FieldDef[] = [
   { key: "fullFireSafeWithdrawalRate", label: "安全引出率(SWR)", suffix: "%", step: 0.1 },
 ];
 
-export function ProfileForm({ profile, onChange, latestSnapshot }: Props) {
+export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: Props) {
   const update = (key: keyof FireProfile, value: number) => {
     onChange({ ...profile, [key]: value });
   };
@@ -40,6 +43,8 @@ export function ProfileForm({ profile, onChange, latestSnapshot }: Props) {
   const effectiveTotal = latestSnapshot
     ? latestSnapshot.jpyManyen * 10_000 + latestSnapshot.cny * latestSnapshot.exchangeRate
     : currentAssetsTotalYen(profile);
+
+  const computedAge = selfMember ? calculateAgeAt(selfMember.birthDate, profile.startDate) : null;
 
   const renderField = (field: FieldDef) => (
     <label key={field.key} className="form-field">
@@ -49,7 +54,7 @@ export function ProfileForm({ profile, onChange, latestSnapshot }: Props) {
           type="number"
           step={field.step ?? 1}
           value={profile[field.key] as number}
-          onChange={(e) => update(field.key, Number(e.target.value))}
+          onChange={(e) => update(field.key, parseNumberInput(e))}
         />
         <span className="form-suffix">{field.suffix}</span>
       </div>
@@ -104,6 +109,18 @@ export function ProfileForm({ profile, onChange, latestSnapshot }: Props) {
               onChange={(e) => update("cnyExchangeRate", Number(e.target.value))}
             />
             <span className="form-suffix">円/CNY</span>
+          </div>
+        </label>
+        <label className="form-field">
+          <span className="form-label">現在の年齢{computedAge != null ? "(本人の生年月から自動計算)" : ""}</span>
+          <div className="form-input-wrap">
+            <input
+              type="number"
+              disabled={computedAge != null}
+              value={computedAge ?? profile.currentAge}
+              onChange={(e) => update("currentAge", parseNumberInput(e))}
+            />
+            <span className="form-suffix">歳</span>
           </div>
         </label>
         {baseFields.map(renderField)}

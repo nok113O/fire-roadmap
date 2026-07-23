@@ -1,4 +1,4 @@
-import { addMonths } from "./dateUtils";
+import { addMonths, monthsBetween } from "./dateUtils";
 
 export interface FamilyMember {
   id: string;
@@ -72,6 +72,17 @@ export function computeStageDates(birthDate: string, startAge: number, years: nu
   const startDate = addMonths(birthDate, startAge * 12);
   const endDate = addMonths(startDate, years * 12 - 1);
   return { startDate, endDate };
+}
+
+// 続柄が「本人」の家族メンバーを返す(複数いる場合は最初の1件)
+export function findSelfMember(members: FamilyMember[]): FamilyMember | undefined {
+  return members.find((m) => m.relation.trim() === "本人");
+}
+
+// 生年月から基準月時点の年齢を計算する(小数第1位まで)
+export function calculateAgeAt(birthDate: string, referenceDate: string): number {
+  const months = monthsBetween(birthDate, referenceDate);
+  return Math.round((months / 12) * 10) / 10;
 }
 
 function isEventActive(event: LifeEvent, date: string): boolean {
