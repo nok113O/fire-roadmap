@@ -26,16 +26,28 @@ export interface RoadmapResult {
   fireAchievedDate: string | null;
 }
 
+export interface AccountDef {
+  id: string;
+  name: string;
+}
+
 export interface MonthlyLogEntry {
   date: string; // yyyy-mm(月末時点の記録)
-  assetsJpyManyen: number; // 日本円建て資産(万円)
-  assetsCny: number; // 人民元建て資産
+  jpyAccountBalances: Record<string, number>; // 口座id -> 万円
+  jpyIncome: number; // 万円/月
+  jpyExpense: number; // 万円/月
+  cnyAssets: number; // 人民元建て資産
+  cnyIncome: number; // 元/月
+  cnyExpense: number; // 元/月
   exchangeRate: number; // その月末時点の為替レート(1CNY = ?円)
   memo?: string;
 }
 
 export interface LogComparison extends MonthlyLogEntry {
   monthIndex: number;
+  jpyAssetsManyen: number;
+  jpySavingsRate: number; // %
+  cnySavingsRate: number; // %
   actualAssets: number; // 円換算の合計実績
   plannedAssets: number;
   diff: number; // actual - planned
@@ -51,10 +63,19 @@ export function currentAssetsTotalYen(
   return profile.currentAssetsJpyManyen * MANYEN + profile.currentAssetsCny * profile.cnyExchangeRate;
 }
 
+export function sumJpyAccountBalances(balances: Record<string, number>): number {
+  return Object.values(balances).reduce((sum, v) => sum + v, 0);
+}
+
+export function savingsRatePercent(income: number, expense: number): number {
+  if (income <= 0) return 0;
+  return Math.round(((income - expense) / income) * 1000) / 10;
+}
+
 export function logEntryAssetsTotalYen(
-  entry: Pick<MonthlyLogEntry, "assetsJpyManyen" | "assetsCny" | "exchangeRate">,
+  entry: Pick<MonthlyLogEntry, "jpyAccountBalances" | "cnyAssets" | "exchangeRate">,
 ): number {
-  return entry.assetsJpyManyen * MANYEN + entry.assetsCny * entry.exchangeRate;
+  return sumJpyAccountBalances(entry.jpyAccountBalances) * MANYEN + entry.cnyAssets * entry.exchangeRate;
 }
 
 export function calculateFireNumber(
@@ -141,6 +162,9 @@ export function compareLogWithPlan(
       return {
         ...entry,
         monthIndex,
+        jpyAssetsManyen: sumJpyAccountBalances(entry.jpyAccountBalances),
+        jpySavingsRate: savingsRatePercent(entry.jpyIncome, entry.jpyExpense),
+        cnySavingsRate: savingsRatePercent(entry.cnyIncome, entry.cnyExpense),
         actualAssets: Math.round(actualAssets),
         plannedAssets: Math.round(planned),
         diff: Math.round(actualAssets - planned),

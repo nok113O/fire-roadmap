@@ -1,8 +1,9 @@
-import type { FireProfile, MonthlyLogEntry } from "./fireCalc";
+import type { AccountDef, FireProfile, MonthlyLogEntry } from "./fireCalc";
 import { currentYearMonth } from "./fireCalc";
 
 const PROFILE_KEY = "fire-roadmap:profile";
 const LOG_KEY = "fire-roadmap:log";
+const ACCOUNTS_KEY = "fire-roadmap:accounts";
 
 export const defaultProfile: FireProfile = {
   currentAge: 30,
@@ -15,6 +16,17 @@ export const defaultProfile: FireProfile = {
   safeWithdrawalRate: 4,
   startDate: currentYearMonth(),
 };
+
+export const defaultAccounts: AccountDef[] = [
+  { id: "mufj", name: "三菱UFJ" },
+  { id: "rakuten", name: "楽天" },
+  { id: "sony", name: "ソニー銀行" },
+  { id: "yucho", name: "ゆうちょ銀行" },
+  { id: "dc", name: "企業型確定拠出年金" },
+  { id: "smbc", name: "三井住友銀行" },
+  { id: "sbishinsei", name: "SBI新生銀行" },
+  { id: "cash", name: "現金" },
+];
 
 export function loadProfile(): FireProfile {
   try {
@@ -42,4 +54,19 @@ export function loadLog(): MonthlyLogEntry[] {
 
 export function saveLog(log: MonthlyLogEntry[]): void {
   localStorage.setItem(LOG_KEY, JSON.stringify(log));
+}
+
+export function loadAccounts(): AccountDef[] {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (!raw) return defaultAccounts;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultAccounts;
+  } catch {
+    return defaultAccounts;
+  }
+}
+
+export function saveAccounts(accounts: AccountDef[]): void {
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
 }

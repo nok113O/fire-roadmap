@@ -173,6 +173,23 @@ input[type="month"] {
   color: var(--text);
 }
 
+.account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-row input[type="text"] {
+  flex: 1;
+}
+
 .btn-primary {
   padding: 9px 18px;
   border-radius: 6px;

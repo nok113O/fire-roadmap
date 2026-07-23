@@ -4,16 +4,18 @@ import { MonthlyLog } from "./components/MonthlyLog";
 import { ProfileForm } from "./components/ProfileForm";
 import { RoadmapChart } from "./components/RoadmapChart";
 import { SummaryCards } from "./components/SummaryCards";
-import type { FireProfile, MonthlyLogEntry } from "./lib/fireCalc";
+import type { AccountDef, FireProfile, MonthlyLogEntry } from "./lib/fireCalc";
 import { calculateRoadmap } from "./lib/fireCalc";
-import { loadLog, loadProfile, saveLog, saveProfile } from "./lib/storage";
+import { loadAccounts, loadLog, loadProfile, saveAccounts, saveLog, saveProfile } from "./lib/storage";
 
 function App() {
   const [profile, setProfile] = useState<FireProfile>(() => loadProfile());
   const [log, setLog] = useState<MonthlyLogEntry[]>(() => loadLog());
+  const [accounts, setAccounts] = useState<AccountDef[]>(() => loadAccounts());
 
   useEffect(() => saveProfile(profile), [profile]);
   useEffect(() => saveLog(log), [log]);
+  useEffect(() => saveAccounts(accounts), [accounts]);
 
   const roadmap = useMemo(() => calculateRoadmap(profile), [profile]);
 
@@ -30,7 +32,14 @@ function App() {
         <ProfileForm profile={profile} onChange={setProfile} />
         <SummaryCards roadmap={roadmap} currentAge={profile.currentAge} />
         <RoadmapChart roadmap={roadmap} log={log} />
-        <MonthlyLog profile={profile} roadmap={roadmap} log={log} onChange={setLog} />
+        <MonthlyLog
+          profile={profile}
+          roadmap={roadmap}
+          log={log}
+          onChange={setLog}
+          accounts={accounts}
+          onAccountsChange={setAccounts}
+        />
       </main>
     </div>
   );
