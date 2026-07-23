@@ -70,34 +70,37 @@ export function ProfileForm({ profile, onChange, latestSnapshot }: Props) {
 
       <div className="form-grid">
         <label className="form-field">
-          <span className="form-label">現在の資産(日本)</span>
+          <span className="form-label">現在の資産(日本){latestSnapshot ? "(実績記録)" : ""}</span>
           <div className="form-input-wrap">
             <input
               type="number"
-              value={profile.currentAssetsJpyManyen}
+              disabled={!!latestSnapshot}
+              value={latestSnapshot ? latestSnapshot.jpyManyen : profile.currentAssetsJpyManyen}
               onChange={(e) => update("currentAssetsJpyManyen", Number(e.target.value))}
             />
             <span className="form-suffix">万円</span>
           </div>
         </label>
         <label className="form-field">
-          <span className="form-label">現在の資産(中国)</span>
+          <span className="form-label">現在の資産(中国){latestSnapshot ? "(実績記録)" : ""}</span>
           <div className="form-input-wrap">
             <input
               type="number"
-              value={profile.currentAssetsCny}
+              disabled={!!latestSnapshot}
+              value={latestSnapshot ? latestSnapshot.cny : profile.currentAssetsCny}
               onChange={(e) => update("currentAssetsCny", Number(e.target.value))}
             />
             <span className="form-suffix">元(CNY)</span>
           </div>
         </label>
         <label className="form-field">
-          <span className="form-label">現在の為替レート</span>
+          <span className="form-label">現在の為替レート{latestSnapshot ? "(実績記録)" : ""}</span>
           <div className="form-input-wrap">
             <input
               type="number"
               step={0.01}
-              value={profile.cnyExchangeRate}
+              disabled={!!latestSnapshot}
+              value={latestSnapshot ? latestSnapshot.exchangeRate : profile.cnyExchangeRate}
               onChange={(e) => update("cnyExchangeRate", Number(e.target.value))}
             />
             <span className="form-suffix">円/CNY</span>

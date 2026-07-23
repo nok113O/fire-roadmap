@@ -91,6 +91,12 @@ select {
   box-sizing: border-box;
 }
 
+input:disabled {
+  background: var(--code-bg);
+  color: var(--text);
+  cursor: not-allowed;
+}
+
 .form-suffix {
   color: var(--text);
   font-size: 13px;
