@@ -2,7 +2,7 @@ import type { FamilyMember } from "../lib/familyPlan";
 import { calculateAgeAt } from "../lib/familyPlan";
 import type { FireProfile, LatestLogSnapshot } from "../lib/fireCalc";
 import { currentAssetsTotalYen } from "../lib/fireCalc";
-import { formatYearMonth, formatYenCompact } from "../lib/format";
+import { formatYearMonth } from "../lib/format";
 import { parseNumberInput } from "../lib/numberInput";
 
 interface Props {
@@ -75,40 +75,18 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: P
 
       <div className="form-grid">
         <label className="form-field">
-          <span className="form-label">現在の資産(日本){latestSnapshot ? "(実績記録)" : ""}</span>
+          <span className="form-label">現在の資産(日本+中国合算){latestSnapshot ? "(実績記録)" : ""}</span>
           <div className="form-input-wrap">
             <input
               type="number"
               disabled={!!latestSnapshot}
-              value={latestSnapshot ? latestSnapshot.jpyManyen : profile.currentAssetsJpyManyen}
-              onChange={(e) => update("currentAssetsJpyManyen", Number(e.target.value))}
+              value={Math.round(effectiveTotal)}
+              onChange={(e) => {
+                const yen = parseNumberInput(e);
+                onChange({ ...profile, currentAssetsJpyManyen: yen / 10_000, currentAssetsCny: 0 });
+              }}
             />
-            <span className="form-suffix">万円</span>
-          </div>
-        </label>
-        <label className="form-field">
-          <span className="form-label">現在の資産(中国){latestSnapshot ? "(実績記録)" : ""}</span>
-          <div className="form-input-wrap">
-            <input
-              type="number"
-              disabled={!!latestSnapshot}
-              value={latestSnapshot ? latestSnapshot.cny : profile.currentAssetsCny}
-              onChange={(e) => update("currentAssetsCny", Number(e.target.value))}
-            />
-            <span className="form-suffix">元(CNY)</span>
-          </div>
-        </label>
-        <label className="form-field">
-          <span className="form-label">現在の為替レート{latestSnapshot ? "(実績記録)" : ""}</span>
-          <div className="form-input-wrap">
-            <input
-              type="number"
-              step={0.01}
-              disabled={!!latestSnapshot}
-              value={latestSnapshot ? latestSnapshot.exchangeRate : profile.cnyExchangeRate}
-              onChange={(e) => update("cnyExchangeRate", Number(e.target.value))}
-            />
-            <span className="form-suffix">円/CNY</span>
+            <span className="form-suffix">円</span>
           </div>
         </label>
         <label className="form-field">
@@ -135,7 +113,6 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: P
           </div>
         </label>
       </div>
-      <p className="form-total-hint">現在の資産合計(円換算): {formatYenCompact(effectiveTotal)}</p>
 
       <h3>セミFIRE目標</h3>
       <div className="form-grid">{semiFireFields.map(renderField)}</div>
