@@ -91,16 +91,27 @@ export interface LatestLogSnapshot {
   exchangeRate: number;
 }
 
+function toSnapshot(entry: MonthlyLogEntry): LatestLogSnapshot {
+  return {
+    date: entry.date,
+    jpyManyen: sumJpyAccountBalances(entry.jpyAccountBalances),
+    cny: entry.cnyAssets,
+    exchangeRate: entry.exchangeRate,
+  };
+}
+
 // 記録済みの実績のうち最新月のものを、現在の資産の代わりに使うためのスナップショットとして返す
 export function latestLogSnapshot(log: MonthlyLogEntry[]): LatestLogSnapshot | null {
   if (log.length === 0) return null;
   const latest = log.slice().sort((a, b) => a.date.localeCompare(b.date))[log.length - 1];
-  return {
-    date: latest.date,
-    jpyManyen: sumJpyAccountBalances(latest.jpyAccountBalances),
-    cny: latest.cnyAssets,
-    exchangeRate: latest.exchangeRate,
-  };
+  return toSnapshot(latest);
+}
+
+// 前月分の実績記録があればそれを優先し、無ければ最新の記録を使う
+export function currentAssetsSnapshot(log: MonthlyLogEntry[], previousMonth: string): LatestLogSnapshot | null {
+  const exact = log.find((entry) => entry.date === previousMonth);
+  if (exact) return toSnapshot(exact);
+  return latestLogSnapshot(log);
 }
 
 export function savingsRatePercent(income: number, expense: number): number {
