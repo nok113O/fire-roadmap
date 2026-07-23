@@ -1,6 +1,7 @@
 import type { FireProfile, LatestLogSnapshot } from "../lib/fireCalc";
 import { currentAssetsTotalYen } from "../lib/fireCalc";
 import { formatYearMonth, formatYenCompact } from "../lib/format";
+import { parseNumberInput } from "../lib/numberInput";
 
 interface Props {
   profile: FireProfile;
@@ -49,7 +50,7 @@ export function ProfileForm({ profile, onChange, latestSnapshot }: Props) {
           type="number"
           step={field.step ?? 1}
           value={profile[field.key] as number}
-          onChange={(e) => update(field.key, Number(e.target.value))}
+          onChange={(e) => update(field.key, parseNumberInput(e))}
         />
         <span className="form-suffix">{field.suffix}</span>
       </div>

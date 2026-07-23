@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FamilyMember, LifeEvent, LifeEventCategory, LifeEventPreset } from "../lib/familyPlan";
 import { computeStageDates, educationStages, lifeEventCategoryLabels } from "../lib/familyPlan";
 import { formatYearMonth } from "../lib/format";
+import { parseNumberInput } from "../lib/numberInput";
 
 interface Props {
   members: FamilyMember[];
@@ -217,7 +218,7 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
               <input
                 type="number"
                 value={preset.amountManyen}
-                onChange={(e) => updatePreset(preset.id, { amountManyen: Number(e.target.value) || 0 })}
+                onChange={(e) => updatePreset(preset.id, { amountManyen: parseNumberInput(e) })}
               />
               <span className="preset-note">{preset.note}</span>
               <button type="button" className="btn-icon" onClick={() => removePreset(preset.id)}>
