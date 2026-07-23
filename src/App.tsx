@@ -7,7 +7,7 @@ import { RoadmapChart } from "./components/RoadmapChart";
 import { SummaryCards } from "./components/SummaryCards";
 import type { FamilyMember, LifeEvent, LifeEventPreset } from "./lib/familyPlan";
 import type { AccountDef, FireProfile, MonthlyLogEntry } from "./lib/fireCalc";
-import { calculateRoadmap } from "./lib/fireCalc";
+import { calculateRoadmap, latestLogSnapshot } from "./lib/fireCalc";
 import {
   loadAccounts,
   loadFamilyMembers,
@@ -38,7 +38,23 @@ function App() {
   useEffect(() => saveLifeEvents(lifeEvents), [lifeEvents]);
   useEffect(() => saveLifeEventPresets(eventPresets), [eventPresets]);
 
-  const roadmap = useMemo(() => calculateRoadmap(profile, lifeEvents), [profile, lifeEvents]);
+  const snapshot = useMemo(() => latestLogSnapshot(log), [log]);
+
+  // 記録済みの実績があれば、それを「現在の資産」として計画の起点に使う(なければ前提条件の手入力値)
+  const effectiveProfile: FireProfile = useMemo(() => {
+    if (!snapshot) return profile;
+    return {
+      ...profile,
+      currentAssetsJpyManyen: snapshot.jpyManyen,
+      currentAssetsCny: snapshot.cny,
+      cnyExchangeRate: snapshot.exchangeRate,
+    };
+  }, [profile, snapshot]);
+
+  const roadmap = useMemo(
+    () => calculateRoadmap(effectiveProfile, lifeEvents),
+    [effectiveProfile, lifeEvents],
+  );
 
   return (
     <div className="app-shell">
@@ -50,7 +66,7 @@ function App() {
       </header>
 
       <main className="app-main">
-        <ProfileForm profile={profile} onChange={setProfile} />
+        <ProfileForm profile={profile} onChange={setProfile} latestSnapshot={snapshot} />
         <FamilyPlan
           members={familyMembers}
           onMembersChange={setFamilyMembers}

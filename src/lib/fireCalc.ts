@@ -84,6 +84,25 @@ export function sumJpyAccountBalances(balances: Record<string, number> | undefin
   return Object.values(balances).reduce((sum, v) => sum + (typeof v === "number" ? v : 0), 0);
 }
 
+export interface LatestLogSnapshot {
+  date: string; // yyyy-mm
+  jpyManyen: number;
+  cny: number;
+  exchangeRate: number;
+}
+
+// 記録済みの実績のうち最新月のものを、現在の資産の代わりに使うためのスナップショットとして返す
+export function latestLogSnapshot(log: MonthlyLogEntry[]): LatestLogSnapshot | null {
+  if (log.length === 0) return null;
+  const latest = log.slice().sort((a, b) => a.date.localeCompare(b.date))[log.length - 1];
+  return {
+    date: latest.date,
+    jpyManyen: sumJpyAccountBalances(latest.jpyAccountBalances),
+    cny: latest.cnyAssets,
+    exchangeRate: latest.exchangeRate,
+  };
+}
+
 export function savingsRatePercent(income: number, expense: number): number {
   if (income <= 0) return 0;
   return Math.round(((income - expense) / income) * 1000) / 10;

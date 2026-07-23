@@ -1,10 +1,11 @@
-import type { FireProfile } from "../lib/fireCalc";
+import type { FireProfile, LatestLogSnapshot } from "../lib/fireCalc";
 import { currentAssetsTotalYen } from "../lib/fireCalc";
-import { formatYenCompact } from "../lib/format";
+import { formatYearMonth, formatYenCompact } from "../lib/format";
 
 interface Props {
   profile: FireProfile;
   onChange: (profile: FireProfile) => void;
+  latestSnapshot: LatestLogSnapshot | null;
 }
 
 interface FieldDef {
@@ -31,12 +32,14 @@ const fullFireFields: FieldDef[] = [
   { key: "fullFireSafeWithdrawalRate", label: "安全引出率(SWR)", suffix: "%", step: 0.1 },
 ];
 
-export function ProfileForm({ profile, onChange }: Props) {
+export function ProfileForm({ profile, onChange, latestSnapshot }: Props) {
   const update = (key: keyof FireProfile, value: number) => {
     onChange({ ...profile, [key]: value });
   };
 
-  const total = currentAssetsTotalYen(profile);
+  const effectiveTotal = latestSnapshot
+    ? latestSnapshot.jpyManyen * 10_000 + latestSnapshot.cny * latestSnapshot.exchangeRate
+    : currentAssetsTotalYen(profile);
 
   const renderField = (field: FieldDef) => (
     <label key={field.key} className="form-field">
@@ -56,6 +59,15 @@ export function ProfileForm({ profile, onChange }: Props) {
   return (
     <section className="card">
       <h2>前提条件</h2>
+
+      {latestSnapshot ? (
+        <p className="form-total-hint">
+          {formatYearMonth(latestSnapshot.date)}の実績記録を「現在の資産」として計画に使用中です。下記の入力欄は実績記録が無い場合のみ使われます。
+        </p>
+      ) : (
+        <p className="form-total-hint">まだ実績記録がないため、下記の入力値を「現在の資産」として計画に使用します。</p>
+      )}
+
       <div className="form-grid">
         <label className="form-field">
           <span className="form-label">現在の資産(日本)</span>
@@ -103,7 +115,7 @@ export function ProfileForm({ profile, onChange }: Props) {
           </div>
         </label>
       </div>
-      <p className="form-total-hint">現在の資産合計(円換算): {formatYenCompact(total)}</p>
+      <p className="form-total-hint">現在の資産合計(円換算): {formatYenCompact(effectiveTotal)}</p>
 
       <h3>セミFIRE目標</h3>
       <div className="form-grid">{semiFireFields.map(renderField)}</div>
