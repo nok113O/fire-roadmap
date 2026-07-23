@@ -69,8 +69,9 @@ export function currentAssetsTotalYen(
   return profile.currentAssetsJpyManyen * MANYEN + profile.currentAssetsCny * profile.cnyExchangeRate;
 }
 
-export function sumJpyAccountBalances(balances: Record<string, number>): number {
-  return Object.values(balances).reduce((sum, v) => sum + v, 0);
+export function sumJpyAccountBalances(balances: Record<string, number> | undefined): number {
+  if (!balances) return 0;
+  return Object.values(balances).reduce((sum, v) => sum + (typeof v === "number" ? v : 0), 0);
 }
 
 export function savingsRatePercent(income: number, expense: number): number {

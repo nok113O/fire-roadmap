@@ -45,11 +45,37 @@ export function saveProfile(profile: FireProfile): void {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
+const LEGACY_ACCOUNT_ID = "_legacy";
+
+// 口座別残高(jpyAccountBalances)導入前の旧形式データを新形式に変換する
+function normalizeLogEntry(raw: Record<string, unknown>): MonthlyLogEntry {
+  const jpyAccountBalances =
+    raw.jpyAccountBalances && typeof raw.jpyAccountBalances === "object"
+      ? (raw.jpyAccountBalances as Record<string, number>)
+      : typeof raw.assetsJpyManyen === "number"
+        ? { [LEGACY_ACCOUNT_ID]: raw.assetsJpyManyen }
+        : {};
+
+  return {
+    date: String(raw.date ?? ""),
+    jpyAccountBalances,
+    jpyIncome: typeof raw.jpyIncome === "number" ? raw.jpyIncome : 0,
+    jpyExpense: typeof raw.jpyExpense === "number" ? raw.jpyExpense : 0,
+    cnyAssets: typeof raw.cnyAssets === "number" ? raw.cnyAssets : typeof raw.assetsCny === "number" ? raw.assetsCny : 0,
+    cnyIncome: typeof raw.cnyIncome === "number" ? raw.cnyIncome : 0,
+    cnyExpense: typeof raw.cnyExpense === "number" ? raw.cnyExpense : 0,
+    exchangeRate: typeof raw.exchangeRate === "number" ? raw.exchangeRate : 0,
+    memo: typeof raw.memo === "string" ? raw.memo : undefined,
+  };
+}
+
 export function loadLog(): MonthlyLogEntry[] {
   try {
     const raw = localStorage.getItem(LOG_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeLogEntry);
   } catch {
     return [];
   }
