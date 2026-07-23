@@ -285,7 +285,7 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
                 <th>実績合計</th>
                 <th>計画</th>
                 <th>差分</th>
-                <th>進捗率</th>
+                <th>進捗率(完全FIRE)</th>
                 <th>メモ</th>
                 <th></th>
               </tr>

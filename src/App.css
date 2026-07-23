@@ -103,6 +103,10 @@ select {
   gap: 16px;
 }
 
+.summary-goal + .summary-goal {
+  margin-top: 24px;
+}
+
 .summary-card {
   background: var(--accent-bg);
   border: 1px solid var(--accent-border);
