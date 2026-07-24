@@ -25,6 +25,7 @@ interface FieldDef {
 
 const baseFields: FieldDef[] = [
   { key: "monthlySavings", label: "毎月の貯蓄額", suffix: "万円/月", commaFormat: true, manyen: true },
+  { key: "savingsGrowthRate", label: "貯蓄額の年間成長率(任意)", suffix: "%", step: 0.1 },
   { key: "annualReturnRate", label: "想定年利回り", suffix: "%", step: 0.1 },
 ];
 
@@ -54,7 +55,7 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lif
   const effectiveMonthlySavingsYen = profile.monthlySavings + lifeEventImpactYen;
 
   const renderField = (field: FieldDef) => {
-    const rawValue = profile[field.key] as number;
+    const rawValue = (profile[field.key] as number | undefined) ?? 0;
     const displayValue = field.manyen ? rawValue / 10_000 : rawValue;
     const setDisplayValue = (value: number) => update(field.key, field.manyen ? value * 10_000 : value);
 
