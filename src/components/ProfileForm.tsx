@@ -120,7 +120,20 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: P
             />
           </div>
         </label>
+        <label className="form-field">
+          <span className="form-label">投資開始月(任意)</span>
+          <div className="form-input-wrap">
+            <input
+              type="month"
+              value={profile.investmentStartDate ?? ""}
+              onChange={(e) => onChange({ ...profile, investmentStartDate: e.target.value || undefined })}
+            />
+          </div>
+        </label>
       </div>
+      <p className="form-total-hint">
+        投資開始月を設定すると、その月より前は想定年利回りを0%(未運用)として計算します。空欄なら常に運用している前提になります。
+      </p>
 
       <h3>セミFIRE目標</h3>
       <div className="form-grid">{semiFireFields.map(renderField)}</div>

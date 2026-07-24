@@ -15,8 +15,20 @@ interface ChartPoint {
   actual?: number;
 }
 
+const DISPLAY_BUFFER_MONTHS = 60; // 達成後も5年分は余白として表示する
+
+// シミュレーション自体は「維持できるか」の判定のため60年分計算しているが、
+// グラフはそのまま表示すると複利の伸びで肝心の達成時期付近が潰れてしまうため、
+// 達成予定時期+バッファ程度に表示範囲を絞る(達成見込みが無い場合は全期間表示)
+function getDisplayPoints(roadmap: RoadmapResult) {
+  const latestAchievedIndex = roadmap.fullFire.achievedMonthIndex ?? roadmap.semiFire.achievedMonthIndex;
+  if (latestAchievedIndex == null) return roadmap.points;
+  const displayEndIndex = Math.min(latestAchievedIndex + DISPLAY_BUFFER_MONTHS, roadmap.points.length - 1);
+  return roadmap.points.slice(0, displayEndIndex + 1);
+}
+
 export function RoadmapChart({ roadmap, log, excludedAccountIds }: Props) {
-  const chartData: ChartPoint[] = roadmap.points.map((p) => ({
+  const chartData: ChartPoint[] = getDisplayPoints(roadmap).map((p) => ({
     date: p.date,
     planned: p.projectedAssets,
   }));
