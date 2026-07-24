@@ -10,6 +10,7 @@ export interface FireProfile {
   currentAssetsCny: number; // 現在の資産(人民元建て)
   cnyExchangeRate: number; // 現在の為替レート(1CNY = ?円)
   monthlySavings: number;
+  savingsGrowthRate?: number; // %/年、昇給などによる毎月の貯蓄額の年間成長率(未設定なら成長なし)
   annualReturnRate: number; // %
   investmentStartDate?: string; // yyyy-mm, この月より前は運用リターンを0%として計算する(未設定なら常に運用している前提)
   startDate: string; // yyyy-mm, plan の起点
@@ -214,7 +215,9 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
     const date = addMonths(profile.startDate, m);
     const isInvesting = !profile.investmentStartDate || date >= profile.investmentStartDate;
     const effectiveMonthlyReturnRate = isInvesting ? monthlyReturnRate : 0;
-    assets = assets * (1 + effectiveMonthlyReturnRate) + profile.monthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
+    const savingsGrowthFactor = Math.pow(1 + (profile.savingsGrowthRate ?? 0) / 100, m / 12);
+    const effectiveMonthlySavings = profile.monthlySavings * savingsGrowthFactor;
+    assets = assets * (1 + effectiveMonthlyReturnRate) + effectiveMonthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
     points.push({
       monthIndex: m,
       age: Math.round((profile.currentAge + m / 12) * 10) / 10,
