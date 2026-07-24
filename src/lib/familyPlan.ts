@@ -40,6 +40,7 @@ export interface LifeEventPreset {
 // 一般的なライフイベントの支出目安(万円)。あくまで目安のため各自編集して利用する想定。
 // 出典: 文部科学省「令和5年度子供の学習費調査」、大学学費は各種銀行・進学情報サイトの公表資料、
 // 結婚式費用はゼクシィ結婚トレンド調査、出産費用・新車価格は厚生労働省・日本自動車工業会の公表資料を参考にした概算値。
+// 習い事費用はベネッセ・学研教室等の調査、趣味・娯楽費は総務省「家計調査」(2025年平均)を参考にした概算値。
 export const defaultLifeEventPresets: LifeEventPreset[] = [
   { id: "preset_kinder_public", name: "幼稚園(公立)", category: "education", kind: "recurring", amountManyen: 18.5, note: "年額目安・3年間" },
   { id: "preset_kinder_private", name: "幼稚園(私立)", category: "education", kind: "recurring", amountManyen: 34.7, note: "年額目安・3年間" },
@@ -57,6 +58,10 @@ export const defaultLifeEventPresets: LifeEventPreset[] = [
   { id: "preset_car_standard", name: "車購入(普通車)", category: "car", kind: "one_time", amountManyen: 330, note: "新車平均価格目安" },
   { id: "preset_car_kei", name: "車購入(軽自動車)", category: "car", kind: "one_time", amountManyen: 200, note: "新車平均価格目安" },
   { id: "preset_housing_downpayment", name: "住宅購入(頭金目安)", category: "housing", kind: "one_time", amountManyen: 500, note: "物件価格・地域により大きく変動" },
+  { id: "preset_lessons_preschool", name: "習い事(未就学児)", category: "education", kind: "recurring", amountManyen: 9.6, note: "年額目安・月1万円未満" },
+  { id: "preset_lessons_elementary", name: "習い事(小学生)", category: "education", kind: "recurring", amountManyen: 18, note: "年額目安・月1.5万円程度(学年が上がるほど増加傾向)" },
+  { id: "preset_lessons_juniorhigh", name: "習い事(中学生)", category: "education", kind: "recurring", amountManyen: 25.6, note: "年額目安・月21,371円の実測平均" },
+  { id: "preset_hobby", name: "趣味・娯楽費", category: "other", kind: "recurring", amountManyen: 38.4, note: "年額目安・二人以上世帯の教養娯楽費(月3.2万円)。個人分のみなら減額して調整" },
 ];
 
 export const educationStages = [
