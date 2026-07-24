@@ -85,7 +85,13 @@ function App() {
       </header>
 
       <main className="app-main">
-        <ProfileForm profile={profile} onChange={setProfile} latestSnapshot={snapshot} selfMember={selfMember} />
+        <ProfileForm
+          profile={profile}
+          onChange={setProfile}
+          latestSnapshot={snapshot}
+          selfMember={selfMember}
+          lifeEvents={lifeEvents}
+        />
         <FamilyPlan
           members={familyMembers}
           onMembersChange={setFamilyMembers}

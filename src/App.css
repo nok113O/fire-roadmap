@@ -135,6 +135,13 @@ input:disabled {
   color: var(--text-h);
 }
 
+.calc-basis {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.85;
+}
+
 .reverse-calc {
   margin-top: 16px;
 }

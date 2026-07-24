@@ -8,7 +8,21 @@ interface Props {
   profile: FireProfile;
 }
 
-function GoalSummary({ label, goal, profile }: { label: string; goal: FireGoalResult; profile: FireProfile }) {
+function GoalSummary({
+  label,
+  goal,
+  profile,
+  annualExpensesManyen,
+  swrPercent,
+  partTimeIncomeManyen,
+}: {
+  label: string;
+  goal: FireGoalResult;
+  profile: FireProfile;
+  annualExpensesManyen: number;
+  swrPercent: number;
+  partTimeIncomeManyen: number;
+}) {
   const [targetAge, setTargetAge] = useState("");
 
   const yearsToGoal = goal.achievedAge != null ? (goal.achievedAge - profile.currentAge).toFixed(1) : null;
@@ -50,6 +64,14 @@ function GoalSummary({ label, goal, profile }: { label: string; goal: FireGoalRe
         </div>
       </div>
 
+      <p className="calc-basis">
+        計算式: {partTimeIncomeManyen > 0 ? `(年間支出${annualExpensesManyen}万円 − 就労収入${partTimeIncomeManyen}万円)` : `年間支出${annualExpensesManyen}万円`}
+        {" ÷ SWR"}
+        {swrPercent}
+        {"% = "}
+        {formatYenCompact(goal.requiredAssets)}
+      </p>
+
       <div className="reverse-calc">
         <label className="form-field">
           <span className="form-label">目標年齢から必要積立額を逆算</span>
@@ -90,8 +112,22 @@ function GoalSummary({ label, goal, profile }: { label: string; goal: FireGoalRe
 export function SummaryCards({ roadmap, profile }: Props) {
   return (
     <section className="card">
-      <GoalSummary label="セミFIRE" goal={roadmap.semiFire} profile={profile} />
-      <GoalSummary label="完全FIRE" goal={roadmap.fullFire} profile={profile} />
+      <GoalSummary
+        label="セミFIRE"
+        goal={roadmap.semiFire}
+        profile={profile}
+        annualExpensesManyen={profile.semiFireAnnualExpenses / 10_000}
+        swrPercent={profile.semiFireSafeWithdrawalRate}
+        partTimeIncomeManyen={profile.semiFirePartTimeIncome / 10_000}
+      />
+      <GoalSummary
+        label="完全FIRE"
+        goal={roadmap.fullFire}
+        profile={profile}
+        annualExpensesManyen={profile.fullFireAnnualExpenses / 10_000}
+        swrPercent={profile.fullFireSafeWithdrawalRate}
+        partTimeIncomeManyen={0}
+      />
     </section>
   );
 }

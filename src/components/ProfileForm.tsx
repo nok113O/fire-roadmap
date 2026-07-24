@@ -1,8 +1,8 @@
-import type { FamilyMember } from "../lib/familyPlan";
-import { calculateAgeAt } from "../lib/familyPlan";
+import type { FamilyMember, LifeEvent } from "../lib/familyPlan";
+import { calculateAgeAt, monthlyLifeEventDeltaYen } from "../lib/familyPlan";
 import type { FireProfile, LatestLogSnapshot } from "../lib/fireCalc";
 import { currentAssetsTotalYen } from "../lib/fireCalc";
-import { formatYearMonth } from "../lib/format";
+import { formatManyen, formatYearMonth } from "../lib/format";
 import { parseNumberInput } from "../lib/numberInput";
 import { CommaNumberInput } from "./CommaNumberInput";
 
@@ -11,6 +11,7 @@ interface Props {
   onChange: (profile: FireProfile) => void;
   latestSnapshot: LatestLogSnapshot | null;
   selfMember: FamilyMember | undefined;
+  lifeEvents: LifeEvent[];
 }
 
 interface FieldDef {
@@ -38,7 +39,7 @@ const fullFireFields: FieldDef[] = [
   { key: "fullFireSafeWithdrawalRate", label: "安全引出率(SWR)", suffix: "%", step: 0.1 },
 ];
 
-export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: Props) {
+export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lifeEvents }: Props) {
   const update = (key: keyof FireProfile, value: number) => {
     onChange({ ...profile, [key]: value });
   };
@@ -48,6 +49,9 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: P
     : currentAssetsTotalYen(profile);
 
   const computedAge = selfMember ? calculateAgeAt(selfMember.birthDate, profile.startDate) : null;
+
+  const lifeEventImpactYen = monthlyLifeEventDeltaYen(lifeEvents, profile.startDate);
+  const effectiveMonthlySavingsYen = profile.monthlySavings + lifeEventImpactYen;
 
   const renderField = (field: FieldDef) => {
     const rawValue = profile[field.key] as number;
@@ -117,6 +121,13 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember }: P
           </div>
         </label>
         {baseFields.map(renderField)}
+      </div>
+      <p className="form-total-hint">
+        起点月({formatYearMonth(profile.startDate)})時点の実効貯蓄額: {formatManyen(effectiveMonthlySavingsYen / 10_000)}/月
+        {lifeEventImpactYen !== 0 &&
+          ` (ライフイベントの影響: ${lifeEventImpactYen > 0 ? "+" : ""}${formatManyen(lifeEventImpactYen / 10_000)}/月)`}
+      </p>
+      <div className="form-grid">
         <label className="form-field">
           <span className="form-label">計画の起点月</span>
           <div className="form-input-wrap">
