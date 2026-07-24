@@ -41,6 +41,7 @@ export interface LifeEventPreset {
 // 出典: 文部科学省「令和5年度子供の学習費調査」、大学学費は各種銀行・進学情報サイトの公表資料、
 // 結婚式費用はゼクシィ結婚トレンド調査、出産費用・新車価格は厚生労働省・日本自動車工業会の公表資料を参考にした概算値。
 // 習い事費用はベネッセ・学研教室等の調査、趣味・娯楽費は総務省「家計調査」(2025年平均)を参考にした概算値。
+// 介護費用は生命保険文化センター「2024年度 生命保険に関する全国実態調査」を参考にした概算値。
 export const defaultLifeEventPresets: LifeEventPreset[] = [
   { id: "preset_kinder_public", name: "幼稚園(公立)", category: "education", kind: "recurring", amountManyen: 18.5, note: "年額目安・3年間" },
   { id: "preset_kinder_private", name: "幼稚園(私立)", category: "education", kind: "recurring", amountManyen: 34.7, note: "年額目安・3年間" },
@@ -62,6 +63,9 @@ export const defaultLifeEventPresets: LifeEventPreset[] = [
   { id: "preset_lessons_elementary", name: "習い事(小学生)", category: "education", kind: "recurring", amountManyen: 18, note: "年額目安・月1.5万円程度(学年が上がるほど増加傾向)" },
   { id: "preset_lessons_juniorhigh", name: "習い事(中学生)", category: "education", kind: "recurring", amountManyen: 25.6, note: "年額目安・月21,371円の実測平均" },
   { id: "preset_hobby", name: "趣味・娯楽費", category: "other", kind: "recurring", amountManyen: 38.4, note: "年額目安・二人以上世帯の教養娯楽費(月3.2万円)。個人分のみなら減額して調整" },
+  { id: "preset_care_initial", name: "介護費用(住宅改造・初期費用)", category: "other", kind: "one_time", amountManyen: 47.2, note: "一時費用の実測平均" },
+  { id: "preset_care_home", name: "介護費用(在宅・月額)", category: "other", kind: "recurring", amountManyen: 63.6, note: "年額目安・月5.3万円の実測平均。介護期間平均4年7ヶ月" },
+  { id: "preset_care_facility", name: "介護費用(施設・月額)", category: "other", kind: "recurring", amountManyen: 165.6, note: "年額目安・月13.8万円の実測平均。介護期間平均4年7ヶ月" },
 ];
 
 export const educationStages = [
