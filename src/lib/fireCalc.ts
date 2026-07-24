@@ -11,6 +11,7 @@ export interface FireProfile {
   cnyExchangeRate: number; // 現在の為替レート(1CNY = ?円)
   monthlySavings: number;
   annualReturnRate: number; // %
+  investmentStartDate?: string; // yyyy-mm, この月より前は運用リターンを0%として計算する(未設定なら常に運用している前提)
   startDate: string; // yyyy-mm, plan の起点
 
   semiFireAnnualExpenses: number; // セミFIRE後の年間支出(円)
@@ -211,7 +212,9 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
 
   for (let m = 1; m <= MAX_MONTHS; m++) {
     const date = addMonths(profile.startDate, m);
-    assets = assets * (1 + monthlyReturnRate) + profile.monthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
+    const isInvesting = !profile.investmentStartDate || date >= profile.investmentStartDate;
+    const effectiveMonthlyReturnRate = isInvesting ? monthlyReturnRate : 0;
+    assets = assets * (1 + effectiveMonthlyReturnRate) + profile.monthlySavings + monthlyLifeEventDeltaYen(lifeEvents, date);
     points.push({
       monthIndex: m,
       age: Math.round((profile.currentAge + m / 12) * 10) / 10,
