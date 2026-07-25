@@ -42,6 +42,7 @@ export interface LifeEventPreset {
 // 結婚式費用はゼクシィ結婚トレンド調査、出産費用・新車価格は厚生労働省・日本自動車工業会の公表資料を参考にした概算値。
 // 習い事費用はベネッセ・学研教室等の調査、趣味・娯楽費は総務省「家計調査」(2025年平均)を参考にした概算値。
 // 介護費用は生命保険文化センター「2024年度 生命保険に関する全国実態調査」を参考にした概算値。
+// 車の維持費は損害保険料率算出機構等の公表資料を参考に、税金・保険・車検・燃料費を合算した概算値。
 export const defaultLifeEventPresets: LifeEventPreset[] = [
   { id: "preset_kinder_public", name: "幼稚園(公立)", category: "education", kind: "recurring", amountManyen: 18.5, note: "年額目安・3年間" },
   { id: "preset_kinder_private", name: "幼稚園(私立)", category: "education", kind: "recurring", amountManyen: 34.7, note: "年額目安・3年間" },
@@ -58,6 +59,8 @@ export const defaultLifeEventPresets: LifeEventPreset[] = [
   { id: "preset_childbirth", name: "出産費用(自己負担目安)", category: "other", kind: "one_time", amountManyen: 10, note: "出産育児一時金50万円差引後。差額ベッド代等で変動" },
   { id: "preset_car_standard", name: "車購入(普通車)", category: "car", kind: "one_time", amountManyen: 330, note: "新車平均価格目安" },
   { id: "preset_car_kei", name: "車購入(軽自動車)", category: "car", kind: "one_time", amountManyen: 200, note: "新車平均価格目安" },
+  { id: "preset_car_maintenance_standard", name: "車の維持費(普通車)", category: "car", kind: "recurring", amountManyen: 31, note: "年額目安・税金/保険/車検/燃料費の合計" },
+  { id: "preset_car_maintenance_kei", name: "車の維持費(軽自動車)", category: "car", kind: "recurring", amountManyen: 19.8, note: "年額目安・税金/保険/車検/燃料費の合計" },
   { id: "preset_housing_downpayment", name: "住宅購入(頭金目安)", category: "housing", kind: "one_time", amountManyen: 500, note: "物件価格・地域により大きく変動" },
   { id: "preset_lessons_preschool", name: "習い事(未就学児)", category: "education", kind: "recurring", amountManyen: 9.6, note: "年額目安・月1万円未満" },
   { id: "preset_lessons_elementary", name: "習い事(小学生)", category: "education", kind: "recurring", amountManyen: 18, note: "年額目安・月1.5万円程度(学年が上がるほど増加傾向)" },
