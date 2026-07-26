@@ -2,6 +2,7 @@ import type { AccountDef, FireProfile, MonthlyLogEntry } from "./fireCalc";
 import { currentYearMonth } from "./fireCalc";
 import type { FamilyMember, LifeEvent, LifeEventPreset } from "./familyPlan";
 import { defaultLifeEventPresets } from "./familyPlan";
+import type { DividendPlan } from "./dividendCalc";
 
 const PROFILE_KEY = "fire-roadmap:profile";
 const LOG_KEY = "fire-roadmap:log";
@@ -9,6 +10,7 @@ const ACCOUNTS_KEY = "fire-roadmap:accounts";
 const FAMILY_KEY = "fire-roadmap:family";
 const LIFE_EVENTS_KEY = "fire-roadmap:lifeEvents";
 const EVENT_PRESETS_KEY = "fire-roadmap:eventPresets";
+const DIVIDEND_PLAN_KEY = "fire-roadmap:dividendPlan";
 
 export const defaultProfile: FireProfile = {
   currentAge: 30,
@@ -159,4 +161,26 @@ export function loadLifeEventPresets(): LifeEventPreset[] {
 
 export function saveLifeEventPresets(presets: LifeEventPreset[]): void {
   localStorage.setItem(EVENT_PRESETS_KEY, JSON.stringify(presets));
+}
+
+export const defaultDividendPlan: DividendPlan = {
+  annualInvestmentManyen: 240,
+  investmentYears: 5,
+  dividendYieldPercent: 3.5,
+  dividendGrowthRatePercent: 15,
+  startDate: "2028-04",
+};
+
+export function loadDividendPlan(): DividendPlan {
+  try {
+    const raw = localStorage.getItem(DIVIDEND_PLAN_KEY);
+    if (!raw) return defaultDividendPlan;
+    return { ...defaultDividendPlan, ...JSON.parse(raw) };
+  } catch {
+    return defaultDividendPlan;
+  }
+}
+
+export function saveDividendPlan(plan: DividendPlan): void {
+  localStorage.setItem(DIVIDEND_PLAN_KEY, JSON.stringify(plan));
 }

@@ -1,22 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
+import { DividendSimulator } from "./components/DividendSimulator";
 import { FamilyPlan } from "./components/FamilyPlan";
 import { MonthlyLog } from "./components/MonthlyLog";
 import { ProfileForm } from "./components/ProfileForm";
 import { RoadmapChart } from "./components/RoadmapChart";
 import { SummaryCards } from "./components/SummaryCards";
+import type { DividendPlan } from "./lib/dividendCalc";
 import { calculateAgeAt, findSelfMember } from "./lib/familyPlan";
 import type { FamilyMember, LifeEvent, LifeEventPreset } from "./lib/familyPlan";
 import type { AccountDef, FireProfile, MonthlyLogEntry } from "./lib/fireCalc";
 import { addMonths, calculateRoadmap, currentAssetsSnapshot } from "./lib/fireCalc";
 import {
   loadAccounts,
+  loadDividendPlan,
   loadFamilyMembers,
   loadLifeEventPresets,
   loadLifeEvents,
   loadLog,
   loadProfile,
   saveAccounts,
+  saveDividendPlan,
   saveFamilyMembers,
   saveLifeEventPresets,
   saveLifeEvents,
@@ -31,6 +35,7 @@ function App() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() => loadFamilyMembers());
   const [lifeEvents, setLifeEvents] = useState<LifeEvent[]>(() => loadLifeEvents());
   const [eventPresets, setEventPresets] = useState<LifeEventPreset[]>(() => loadLifeEventPresets());
+  const [dividendPlan, setDividendPlan] = useState<DividendPlan>(() => loadDividendPlan());
 
   useEffect(() => saveProfile(profile), [profile]);
   useEffect(() => saveLog(log), [log]);
@@ -38,6 +43,7 @@ function App() {
   useEffect(() => saveFamilyMembers(familyMembers), [familyMembers]);
   useEffect(() => saveLifeEvents(lifeEvents), [lifeEvents]);
   useEffect(() => saveLifeEventPresets(eventPresets), [eventPresets]);
+  useEffect(() => saveDividendPlan(dividendPlan), [dividendPlan]);
 
   const excludedAccountIds = useMemo(
     () => new Set(accounts.filter((a) => a.excludeFromTotal).map((a) => a.id)),
@@ -101,6 +107,7 @@ function App() {
           onPresetsChange={setEventPresets}
         />
         <SummaryCards roadmap={roadmap} profile={effectiveProfile} />
+        <DividendSimulator plan={dividendPlan} onChange={setDividendPlan} />
         <RoadmapChart roadmap={roadmap} log={log} excludedAccountIds={excludedAccountIds} />
         <MonthlyLog
           profile={profile}
