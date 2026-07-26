@@ -68,9 +68,10 @@ export interface LogComparison extends MonthlyLogEntry {
   jpySavingsRate: number; // %
   cnySavingsRate: number; // %
   actualAssets: number; // 円換算の合計実績
-  plannedAssets: number;
-  diff: number; // actual - planned
-  progressRate: number; // actual / 完全FIRE必要資産額 * 100
+  // 計画の起点月より前の記録は比較対象となる予測値が存在しないため、いずれもnullになる
+  plannedAssets: number | null;
+  diff: number | null; // actual - planned
+  progressRate: number | null; // actual / 完全FIRE必要資産額 * 100
 }
 
 const MAX_MONTHS = 60 * 12;
@@ -255,7 +256,9 @@ export function compareLogWithPlan(
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((entry) => {
       const monthIndex = monthsBetween(profile.startDate, entry.date);
-      const planned = plannedAssetsAt(roadmap, monthIndex);
+      // 計画の起点月より前は、比較対象となる予測値がそもそも存在しない
+      const hasPlan = monthIndex >= 0;
+      const planned = hasPlan ? plannedAssetsAt(roadmap, monthIndex) : null;
       const actualAssets = logEntryAssetsTotalYen(entry, excludedAccountIds);
       return {
         ...entry,
@@ -264,8 +267,8 @@ export function compareLogWithPlan(
         jpySavingsRate: savingsRatePercent(entry.jpyIncome, entry.jpyExpense),
         cnySavingsRate: savingsRatePercent(entry.cnyIncome, entry.cnyExpense),
         actualAssets: Math.round(actualAssets),
-        plannedAssets: Math.round(planned),
-        diff: Math.round(actualAssets - planned),
+        plannedAssets: planned != null ? Math.round(planned) : null,
+        diff: planned != null ? Math.round(actualAssets - planned) : null,
         progressRate:
           roadmap.fullFire.requiredAssets > 0
             ? Math.round((actualAssets / roadmap.fullFire.requiredAssets) * 1000) / 10

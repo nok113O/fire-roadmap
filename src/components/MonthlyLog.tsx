@@ -314,10 +314,9 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
                   <td>{row.cnyAssets.toLocaleString("ja-JP")}</td>
                   <td>{row.exchangeRate}</td>
                   <td>{formatYen(row.actualAssets)}</td>
-                  <td>{formatYen(row.plannedAssets)}</td>
-                  <td className={row.diff >= 0 ? "diff-positive" : "diff-negative"}>
-                    {row.diff >= 0 ? "+" : ""}
-                    {formatYen(row.diff)}
+                  <td>{row.plannedAssets != null ? formatYen(row.plannedAssets) : "-"}</td>
+                  <td className={row.diff == null ? undefined : row.diff >= 0 ? "diff-positive" : "diff-negative"}>
+                    {row.diff == null ? "-" : `${row.diff >= 0 ? "+" : ""}${formatYen(row.diff)}`}
                   </td>
                   <td>{row.progressRate}%</td>
                   <td className="memo-cell">{row.memo ?? ""}</td>
