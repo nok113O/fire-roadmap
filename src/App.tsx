@@ -77,8 +77,8 @@ function App() {
   }, [profile, snapshot, selfMember]);
 
   const roadmap = useMemo(
-    () => calculateRoadmap(effectiveProfile, lifeEvents),
-    [effectiveProfile, lifeEvents],
+    () => calculateRoadmap(effectiveProfile, lifeEvents, dividendPlan),
+    [effectiveProfile, lifeEvents, dividendPlan],
   );
 
   return (

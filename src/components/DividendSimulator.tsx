@@ -22,7 +22,7 @@ export function DividendSimulator({ plan, onChange }: Props) {
     <section className="card">
       <h2>配当金シミュレーション</h2>
       <p className="form-total-hint">
-        NISA成長投資枠などを使った増配株投資を想定し、投資した年ごとの元本が複利で配当を増やしていく前提でシミュレーションします。
+        NISA成長投資枠などを使った増配株投資を想定し、投資した年ごとの元本が複利で配当を増やしていく前提でシミュレーションします。この配当収入は、セミFIRE・完全FIREの必要資産額から差し引く追加収入として計算に反映されます(配当を生む元本自体は「現在の資産」として通常通り計算されるため、二重計上にはなりません)。
       </p>
 
       <div className="form-grid">
