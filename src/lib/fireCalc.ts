@@ -1,4 +1,6 @@
 import { addMonths, currentYearMonth, monthsBetween } from "./dateUtils";
+import type { DividendPlan } from "./dividendCalc";
+import { getAnnualDividendManyenAt } from "./dividendCalc";
 import type { LifeEvent } from "./familyPlan";
 import { monthlyLifeEventDeltaYen } from "./familyPlan";
 
@@ -183,23 +185,25 @@ function buildGoalResult(
 }
 
 // 一度必要資産額に到達しても、将来の大きな支出(教育費など)で再び下回ることがあるため、
-// 「その月以降シミュレーション期間の終わりまでずっと必要資産額を維持できる」最初の月を達成とみなす
-function findSustainedAchievedMonthIndex(points: RoadmapPoint[], requiredAssets: number): number | null {
+// 「その月以降シミュレーション期間の終わりまでずっと必要資産額を維持できる」最初の月を達成とみなす。
+// 配当収入を考慮する場合、必要資産額は月によって変わりうるため、固定値ではなく関数として受け取る。
+function findSustainedAchievedMonthIndex(
+  points: RoadmapPoint[],
+  requiredAssetsAt: (index: number) => number,
+): number | null {
   let lastBelowIndex = -1;
   for (let i = 0; i < points.length; i++) {
-    if (points[i].projectedAssets < requiredAssets) lastBelowIndex = i;
+    if (points[i].projectedAssets < requiredAssetsAt(i)) lastBelowIndex = i;
   }
   const sustainedIndex = lastBelowIndex + 1;
   return sustainedIndex < points.length ? sustainedIndex : null;
 }
 
-export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] = []): RoadmapResult {
-  const semiRequired = calculateRequiredAssets(
-    profile.semiFireAnnualExpenses,
-    profile.semiFireSafeWithdrawalRate,
-    profile.semiFirePartTimeIncome,
-  );
-  const fullRequired = calculateRequiredAssets(profile.fullFireAnnualExpenses, profile.fullFireSafeWithdrawalRate);
+export function calculateRoadmap(
+  profile: FireProfile,
+  lifeEvents: LifeEvent[] = [],
+  dividendPlan?: DividendPlan,
+): RoadmapResult {
   const monthlyReturnRate = Math.pow(1 + profile.annualReturnRate / 100, 1 / 12) - 1;
 
   const points: RoadmapPoint[] = [];
@@ -227,13 +231,34 @@ export function calculateRoadmap(profile: FireProfile, lifeEvents: LifeEvent[] =
     });
   }
 
-  const semiAchievedMonthIndex = findSustainedAchievedMonthIndex(points, semiRequired);
-  const fullAchievedMonthIndex = findSustainedAchievedMonthIndex(points, fullRequired);
+  // 配当収入(NISA増配株投資などの想定)を、就労収入と同様に必要資産額から差し引く追加収入として扱う。
+  // 配当を生む元本自体はすでに「現在の資産」に含まれ通常通り複利成長するため、配当額を資産側には加算しない(二重計上防止)。
+  const dividendYenAt = (date: string): number =>
+    dividendPlan ? getAnnualDividendManyenAt(dividendPlan, date) * MANYEN : 0;
+
+  const semiRequiredAt = (date: string) =>
+    calculateRequiredAssets(
+      profile.semiFireAnnualExpenses,
+      profile.semiFireSafeWithdrawalRate,
+      profile.semiFirePartTimeIncome + dividendYenAt(date),
+    );
+  const fullRequiredAt = (date: string) =>
+    calculateRequiredAssets(profile.fullFireAnnualExpenses, profile.fullFireSafeWithdrawalRate, dividendYenAt(date));
+
+  const semiAchievedMonthIndex = findSustainedAchievedMonthIndex(points, (i) => semiRequiredAt(points[i].date));
+  const fullAchievedMonthIndex = findSustainedAchievedMonthIndex(points, (i) => fullRequiredAt(points[i].date));
+
+  const semiRequiredDisplay = semiRequiredAt(
+    semiAchievedMonthIndex != null ? points[semiAchievedMonthIndex].date : profile.startDate,
+  );
+  const fullRequiredDisplay = fullRequiredAt(
+    fullAchievedMonthIndex != null ? points[fullAchievedMonthIndex].date : profile.startDate,
+  );
 
   return {
     points,
-    semiFire: buildGoalResult(profile, semiRequired, semiAchievedMonthIndex),
-    fullFire: buildGoalResult(profile, fullRequired, fullAchievedMonthIndex),
+    semiFire: buildGoalResult(profile, semiRequiredDisplay, semiAchievedMonthIndex),
+    fullFire: buildGoalResult(profile, fullRequiredDisplay, fullAchievedMonthIndex),
   };
 }
 

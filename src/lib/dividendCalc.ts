@@ -1,4 +1,4 @@
-import { addMonths } from "./dateUtils";
+import { addMonths, monthsBetween } from "./dateUtils";
 
 export interface DividendPlan {
   annualInvestmentManyen: number; // 年間投資額(万円)。NISA成長投資枠なら上限240万円/年
@@ -35,6 +35,20 @@ export function calculateDividendProjection(plan: DividendPlan): DividendYearPoi
     });
   }
   return points;
+}
+
+// 任意の年月時点での想定年間配当額(万円)を計算する。ロードマップ計算に組み込むために使用。
+export function getAnnualDividendManyenAt(plan: DividendPlan, date: string): number {
+  const yearsSinceStart = monthsBetween(plan.startDate, date) / 12;
+  if (yearsSinceStart < 0) return 0;
+  let total = 0;
+  for (let k = 0; k < Math.max(plan.investmentYears, 0); k++) {
+    const yearsSinceTranche = yearsSinceStart - k;
+    if (yearsSinceTranche < 0) continue;
+    const baseDividend = plan.annualInvestmentManyen * (plan.dividendYieldPercent / 100);
+    total += baseDividend * Math.pow(1 + plan.dividendGrowthRatePercent / 100, yearsSinceTranche);
+  }
+  return total;
 }
 
 // 目標の年間配当額に初めて到達する年のポイントを返す(到達しなければnull)
