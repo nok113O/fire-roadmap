@@ -168,6 +168,7 @@ export const defaultDividendPlan: DividendPlan = {
   investmentYears: 5,
   dividendYieldPercent: 3.5,
   dividendGrowthRatePercent: 15,
+  dividendGrowthCapYears: 20,
   startDate: "2028-04",
 };
 

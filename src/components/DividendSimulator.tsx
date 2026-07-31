@@ -22,7 +22,7 @@ export function DividendSimulator({ plan, onChange }: Props) {
     <section className="card">
       <h2>配当金シミュレーション</h2>
       <p className="form-total-hint">
-        NISA成長投資枠などを使った増配株投資を想定し、投資した年ごとの元本が複利で配当を増やしていく前提でシミュレーションします。この配当収入は、セミFIRE・完全FIREの必要資産額から差し引く追加収入として計算に反映されます(配当を生む元本自体は「現在の資産」として通常通り計算されるため、二重計上にはなりません)。
+        NISA成長投資枠などを使った増配株投資を想定し、投資した年ごとの元本が複利で配当を増やしていく前提でシミュレーションします。この配当収入は、起点月(今)時点の想定配当額を使って、セミFIRE・完全FIREの必要資産額から差し引く追加収入として計算に反映されます(配当を生む元本自体は「現在の資産」として通常通り計算されるため、二重計上にはなりません)。配当開始前は差し引かれる金額は0円になり、支出などの入力を変えても必要資産額の配当分は変わりません。なお配当成長は「配当成長の上限年数」で頭打ちにし、非現実的な際限のない複利成長を防いでいます。
       </p>
 
       <div className="form-grid">
@@ -69,6 +69,17 @@ export function DividendSimulator({ plan, onChange }: Props) {
               onChange={(e) => update({ dividendGrowthRatePercent: Number(e.target.value) || 0 })}
             />
             <span className="form-suffix">%</span>
+          </div>
+        </label>
+        <label className="form-field">
+          <span className="form-label">配当成長の上限年数</span>
+          <div className="form-input-wrap">
+            <input
+              type="number"
+              value={plan.dividendGrowthCapYears}
+              onChange={(e) => update({ dividendGrowthCapYears: Number(e.target.value) || 0 })}
+            />
+            <span className="form-suffix">年</span>
           </div>
         </label>
         <label className="form-field">
