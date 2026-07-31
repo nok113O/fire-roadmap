@@ -248,18 +248,20 @@ export function calculateRoadmap(
   const fullRequiredAt = (date: string) =>
     calculateRequiredAssets(profile.fullFireAnnualExpenses, profile.fullFireSafeWithdrawalRate, dividendYenAt(date));
 
+  // 達成判定そのものは、暦の上で配当が実際に育っていく前提を正しく反映するため、月ごとに変わる閾値を使う。
   const semiAchievedMonthIndex = findSustainedAchievedMonthIndex(points, (i) => semiRequiredAt(points[i].date));
   const fullAchievedMonthIndex = findSustainedAchievedMonthIndex(points, (i) => fullRequiredAt(points[i].date));
 
-  const semiDisplayDate = semiAchievedMonthIndex != null ? points[semiAchievedMonthIndex].date : profile.startDate;
-  const fullDisplayDate = fullAchievedMonthIndex != null ? points[fullAchievedMonthIndex].date : profile.startDate;
-  const semiRequiredDisplay = semiRequiredAt(semiDisplayDate);
-  const fullRequiredDisplay = fullRequiredAt(fullDisplayDate);
+  // 表示する必要資産額は、達成予定日ではなく起点月(今)時点の配当収入で固定する。
+  // 達成予定日を基準にすると、支出を増やして達成が遅れるほど配当がその分余計に複利成長した扱いになり、
+  // 「支出を増やすほど必要資産額が下がって見える」という不自然な結果になるため。
+  const semiRequiredDisplay = semiRequiredAt(profile.startDate);
+  const fullRequiredDisplay = fullRequiredAt(profile.startDate);
 
   return {
     points,
-    semiFire: buildGoalResult(profile, semiRequiredDisplay, semiAchievedMonthIndex, dividendYenAt(semiDisplayDate)),
-    fullFire: buildGoalResult(profile, fullRequiredDisplay, fullAchievedMonthIndex, dividendYenAt(fullDisplayDate)),
+    semiFire: buildGoalResult(profile, semiRequiredDisplay, semiAchievedMonthIndex, dividendYenAt(profile.startDate)),
+    fullFire: buildGoalResult(profile, fullRequiredDisplay, fullAchievedMonthIndex, dividendYenAt(profile.startDate)),
   };
 }
 
