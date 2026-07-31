@@ -8,6 +8,18 @@ interface Props {
   profile: FireProfile;
 }
 
+function buildCalcBasisExpression(
+  annualExpensesManyen: number,
+  partTimeIncomeManyen: number,
+  dividendIncomeManyen: number,
+): string {
+  const deductions: string[] = [];
+  if (partTimeIncomeManyen > 0) deductions.push(`就労収入${partTimeIncomeManyen}万円`);
+  if (dividendIncomeManyen > 0) deductions.push(`配当収入${dividendIncomeManyen}万円`);
+  if (deductions.length === 0) return `年間支出${annualExpensesManyen}万円`;
+  return `(年間支出${annualExpensesManyen}万円 − ${deductions.join(" − ")})`;
+}
+
 function GoalSummary({
   label,
   goal,
@@ -23,6 +35,7 @@ function GoalSummary({
   swrPercent: number;
   partTimeIncomeManyen: number;
 }) {
+  const dividendIncomeManyen = Math.round((goal.dividendIncomeYen / 10_000) * 10) / 10;
   const [targetAge, setTargetAge] = useState("");
 
   const yearsToGoal = goal.achievedAge != null ? (goal.achievedAge - profile.currentAge).toFixed(1) : null;
@@ -65,7 +78,7 @@ function GoalSummary({
       </div>
 
       <p className="calc-basis">
-        計算式: {partTimeIncomeManyen > 0 ? `(年間支出${annualExpensesManyen}万円 − 就労収入${partTimeIncomeManyen}万円)` : `年間支出${annualExpensesManyen}万円`}
+        計算式: {buildCalcBasisExpression(annualExpensesManyen, partTimeIncomeManyen, dividendIncomeManyen)}
         {" ÷ SWR"}
         {swrPercent}
         {"% = "}

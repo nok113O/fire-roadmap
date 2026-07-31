@@ -38,6 +38,7 @@ export interface FireGoalResult {
   achievedMonthIndex: number | null;
   achievedAge: number | null;
   achievedDate: string | null;
+  dividendIncomeYen: number; // 必要資産額の計算時に差し引いた想定年間配当額(円)
 }
 
 export interface RoadmapResult {
@@ -173,6 +174,7 @@ function buildGoalResult(
   profile: FireProfile,
   requiredAssets: number,
   achievedMonthIndex: number | null,
+  dividendIncomeYen: number,
 ): FireGoalResult {
   const achieved = achievedMonthIndex !== null;
   return {
@@ -181,6 +183,7 @@ function buildGoalResult(
     achievedMonthIndex,
     achievedAge: achieved ? Math.round((profile.currentAge + achievedMonthIndex! / 12) * 10) / 10 : null,
     achievedDate: achieved ? addMonths(profile.startDate, achievedMonthIndex!) : null,
+    dividendIncomeYen,
   };
 }
 
@@ -248,17 +251,15 @@ export function calculateRoadmap(
   const semiAchievedMonthIndex = findSustainedAchievedMonthIndex(points, (i) => semiRequiredAt(points[i].date));
   const fullAchievedMonthIndex = findSustainedAchievedMonthIndex(points, (i) => fullRequiredAt(points[i].date));
 
-  const semiRequiredDisplay = semiRequiredAt(
-    semiAchievedMonthIndex != null ? points[semiAchievedMonthIndex].date : profile.startDate,
-  );
-  const fullRequiredDisplay = fullRequiredAt(
-    fullAchievedMonthIndex != null ? points[fullAchievedMonthIndex].date : profile.startDate,
-  );
+  const semiDisplayDate = semiAchievedMonthIndex != null ? points[semiAchievedMonthIndex].date : profile.startDate;
+  const fullDisplayDate = fullAchievedMonthIndex != null ? points[fullAchievedMonthIndex].date : profile.startDate;
+  const semiRequiredDisplay = semiRequiredAt(semiDisplayDate);
+  const fullRequiredDisplay = fullRequiredAt(fullDisplayDate);
 
   return {
     points,
-    semiFire: buildGoalResult(profile, semiRequiredDisplay, semiAchievedMonthIndex),
-    fullFire: buildGoalResult(profile, fullRequiredDisplay, fullAchievedMonthIndex),
+    semiFire: buildGoalResult(profile, semiRequiredDisplay, semiAchievedMonthIndex, dividendYenAt(semiDisplayDate)),
+    fullFire: buildGoalResult(profile, fullRequiredDisplay, fullAchievedMonthIndex, dividendYenAt(fullDisplayDate)),
   };
 }
 
