@@ -5,6 +5,7 @@ export interface DividendPlan {
   investmentYears: number; // 投資を続ける年数(この年数分、毎年積み立てる)
   dividendYieldPercent: number; // 投資した年の初期配当利回り(%)
   dividendGrowthRatePercent: number; // 配当の年間成長率(%)。増配株投資の前提
+  dividendGrowthCapYears: number; // 配当成長が複利で続く上限年数(この年数以降は横ばいとして計算)
   startDate: string; // yyyy-mm, 投資開始月
 }
 
@@ -24,7 +25,7 @@ export function calculateDividendProjection(plan: DividendPlan): DividendYearPoi
     let total = 0;
     const tranchesInvested = Math.min(year + 1, Math.max(plan.investmentYears, 0));
     for (let k = 0; k < tranchesInvested; k++) {
-      const yearsSinceTranche = year - k;
+      const yearsSinceTranche = Math.min(year - k, plan.dividendGrowthCapYears);
       const baseDividend = plan.annualInvestmentManyen * (plan.dividendYieldPercent / 100);
       total += baseDividend * Math.pow(1 + plan.dividendGrowthRatePercent / 100, yearsSinceTranche);
     }
@@ -46,7 +47,7 @@ export function getAnnualDividendManyenAt(plan: DividendPlan, date: string): num
     const yearsSinceTranche = yearsSinceStart - k;
     if (yearsSinceTranche < 0) continue;
     const baseDividend = plan.annualInvestmentManyen * (plan.dividendYieldPercent / 100);
-    total += baseDividend * Math.pow(1 + plan.dividendGrowthRatePercent / 100, yearsSinceTranche);
+    total += baseDividend * Math.pow(1 + plan.dividendGrowthRatePercent / 100, Math.min(yearsSinceTranche, plan.dividendGrowthCapYears));
   }
   return total;
 }
