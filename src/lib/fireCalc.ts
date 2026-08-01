@@ -59,8 +59,6 @@ export interface MonthlyLogEntry {
   jpyIncome: number; // 万円/月
   jpyExpense: number; // 万円/月
   cnyAssets: number; // 人民元建て資産
-  cnyIncome: number; // 元/月
-  cnyExpense: number; // 元/月
   exchangeRate: number; // その月末時点の為替レート(1CNY = ?円)
   memo?: string;
 }
@@ -69,7 +67,6 @@ export interface LogComparison extends MonthlyLogEntry {
   monthIndex: number;
   jpyAssetsManyen: number;
   jpySavingsRate: number; // %
-  cnySavingsRate: number; // %
   actualAssets: number; // 円換算の合計実績
   // 計画の起点月より前の記録は比較対象となる予測値が存在しないため、いずれもnullになる
   plannedAssets: number | null;
@@ -319,7 +316,6 @@ export function compareLogWithPlan(
         monthIndex,
         jpyAssetsManyen: sumJpyAccountBalances(entry.jpyAccountBalances, excludedAccountIds),
         jpySavingsRate: savingsRatePercent(entry.jpyIncome, entry.jpyExpense),
-        cnySavingsRate: savingsRatePercent(entry.cnyIncome, entry.cnyExpense),
         actualAssets: Math.round(actualAssets),
         plannedAssets: planned != null ? Math.round(planned) : null,
         diff: planned != null ? Math.round(actualAssets - planned) : null,
