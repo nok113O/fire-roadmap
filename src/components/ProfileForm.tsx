@@ -1,7 +1,7 @@
 import type { FamilyMember, LifeEvent } from "../lib/familyPlan";
 import { calculateAgeAt, monthlyLifeEventDeltaYen } from "../lib/familyPlan";
-import type { FireProfile, LatestLogSnapshot } from "../lib/fireCalc";
-import { currentAssetsTotalYen } from "../lib/fireCalc";
+import type { FireProfile, LatestLogSnapshot, MonthlyLogEntry } from "../lib/fireCalc";
+import { currentAssetsTotalYen, estimateMonthlySavingsFromLog } from "../lib/fireCalc";
 import { formatManyen, formatYearMonth } from "../lib/format";
 import { parseNumberInput } from "../lib/numberInput";
 import { CommaNumberInput } from "./CommaNumberInput";
@@ -12,7 +12,11 @@ interface Props {
   latestSnapshot: LatestLogSnapshot | null;
   selfMember: FamilyMember | undefined;
   lifeEvents: LifeEvent[];
+  log: MonthlyLogEntry[];
+  excludedAccountIds: Set<string>;
 }
+
+const SAVINGS_ESTIMATE_WINDOW_MONTHS = 12;
 
 interface FieldDef {
   key: keyof FireProfile;
@@ -40,7 +44,7 @@ const fullFireFields: FieldDef[] = [
   { key: "fullFireSafeWithdrawalRate", label: "安全引出率(SWR)", suffix: "%", step: 0.1 },
 ];
 
-export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lifeEvents }: Props) {
+export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lifeEvents, log, excludedAccountIds }: Props) {
   const update = (key: keyof FireProfile, value: number) => {
     onChange({ ...profile, [key]: value });
   };
@@ -53,6 +57,8 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lif
 
   const lifeEventImpactYen = monthlyLifeEventDeltaYen(lifeEvents, profile.startDate);
   const effectiveMonthlySavingsYen = profile.monthlySavings + lifeEventImpactYen;
+
+  const savingsEstimate = estimateMonthlySavingsFromLog(log, SAVINGS_ESTIMATE_WINDOW_MONTHS, excludedAccountIds);
 
   const renderField = (field: FieldDef) => {
     const rawValue = (profile[field.key] as number | undefined) ?? 0;
@@ -123,6 +129,20 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lif
         </label>
         {baseFields.map(renderField)}
       </div>
+      {savingsEstimate && (
+        <p className="form-total-hint">
+          実績記録({formatYearMonth(savingsEstimate.fromDate)}〜{formatYearMonth(savingsEstimate.toDate)}、{savingsEstimate.monthsUsed}ヶ月分)から算出した平均貯蓄額:{" "}
+          {formatManyen(savingsEstimate.monthlySavingsYen / 10_000)}/月
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={() => update("monthlySavings", Math.round(savingsEstimate.monthlySavingsYen))}
+          >
+            この値を適用
+          </button>
+          (投資リターンや為替変動も混ざった概算値です)
+        </p>
+      )}
       <p className="form-total-hint">
         起点月({formatYearMonth(profile.startDate)})時点の実効貯蓄額: {formatManyen(effectiveMonthlySavingsYen / 10_000)}/月
         {lifeEventImpactYen !== 0 &&
