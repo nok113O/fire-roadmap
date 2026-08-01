@@ -14,10 +14,6 @@ export function formatYearMonth(yyyyMm: string): string {
   return `${y}年${Number(m)}月`;
 }
 
-export function formatCny(value: number): string {
-  return `¥${Math.round(value).toLocaleString("ja-JP")}(CNY)`;
-}
-
 export function formatManyen(value: number): string {
   return `${Math.round(value).toLocaleString("ja-JP")}万円`;
 }

@@ -51,11 +51,7 @@ function parseBulkImportText(text: string): { entries: MonthlyLogEntry[]; errorL
       entries.push({
         date,
         jpyAccountBalances: { [BULK_IMPORT_ACCOUNT_ID]: jpyManyen },
-        jpyIncome: 0,
-        jpyExpense: 0,
         cnyAssets,
-        cnyIncome: 0,
-        cnyExpense: 0,
         exchangeRate,
         memo: memoParts.join(" ") || undefined,
       });
@@ -67,11 +63,7 @@ function parseBulkImportText(text: string): { entries: MonthlyLogEntry[]; errorL
 export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccountsChange }: Props) {
   const [date, setDate] = useState(currentYearMonth());
   const [accountInputs, setAccountInputs] = useState<Record<string, string>>({});
-  const [jpyIncome, setJpyIncome] = useState("");
-  const [jpyExpense, setJpyExpense] = useState("");
   const [cnyAssets, setCnyAssets] = useState("");
-  const [cnyIncome, setCnyIncome] = useState("");
-  const [cnyExpense, setCnyExpense] = useState("");
   const [exchangeRate, setExchangeRate] = useState(String(profile.cnyExchangeRate));
   const [memo, setMemo] = useState("");
   const [newAccountName, setNewAccountName] = useState("");
@@ -107,17 +99,7 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
     }
     const cny = Number(cnyAssets) || 0;
     const rate = Number(exchangeRate);
-    const income = Number(jpyIncome) || 0;
-    const expense = Number(jpyExpense) || 0;
-    const cnyIn = Number(cnyIncome) || 0;
-    const cnyOut = Number(cnyExpense) || 0;
-    const hasAnyValue =
-      Object.values(jpyAccountBalances).some((v) => v !== 0) ||
-      cny !== 0 ||
-      income !== 0 ||
-      expense !== 0 ||
-      cnyIn !== 0 ||
-      cnyOut !== 0;
+    const hasAnyValue = Object.values(jpyAccountBalances).some((v) => v !== 0) || cny !== 0;
     if (!date || Number.isNaN(rate) || !hasAnyValue) return;
 
     onChange(
@@ -125,22 +107,14 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
         {
           date,
           jpyAccountBalances,
-          jpyIncome: income,
-          jpyExpense: expense,
           cnyAssets: cny,
-          cnyIncome: cnyIn,
-          cnyExpense: cnyOut,
           exchangeRate: rate,
           memo: memo || undefined,
         },
       ]),
     );
     setAccountInputs({});
-    setJpyIncome("");
-    setJpyExpense("");
     setCnyAssets("");
-    setCnyIncome("");
-    setCnyExpense("");
     setMemo("");
   };
 
@@ -208,24 +182,8 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
           <input type="month" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="form-field">
-          <span className="form-label">日本 収入</span>
-          <CommaNumberInput placeholder="万円" value={jpyIncome} onChange={setJpyIncome} />
-        </label>
-        <label className="form-field">
-          <span className="form-label">日本 支出</span>
-          <CommaNumberInput placeholder="万円" value={jpyExpense} onChange={setJpyExpense} />
-        </label>
-        <label className="form-field">
           <span className="form-label">中国 資産</span>
           <CommaNumberInput placeholder="元(CNY)" value={cnyAssets} onChange={setCnyAssets} />
-        </label>
-        <label className="form-field">
-          <span className="form-label">中国 収入</span>
-          <CommaNumberInput placeholder="元(CNY)" value={cnyIncome} onChange={setCnyIncome} />
-        </label>
-        <label className="form-field">
-          <span className="form-label">中国 支出</span>
-          <CommaNumberInput placeholder="元(CNY)" value={cnyExpense} onChange={setCnyExpense} />
         </label>
         <label className="form-field">
           <span className="form-label">為替レート</span>

@@ -376,6 +376,7 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
                 <th>開始</th>
                 <th>終了</th>
                 <th>対象</th>
+                <th>メモ</th>
                 <th></th>
               </tr>
             </thead>
@@ -463,6 +464,15 @@ export function FamilyPlan({ members, onMembersChange, events, onEventsChange, p
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        className="table-edit-input"
+                        placeholder="メモ(任意)"
+                        value={ev.memo ?? ""}
+                        onChange={(e) => updateEvent(ev.id, { memo: e.target.value || undefined })}
+                      />
                     </td>
                     <td>
                       <button type="button" className="btn-icon" onClick={() => removeEvent(ev.id)}>
