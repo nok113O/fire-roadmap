@@ -56,8 +56,6 @@ export interface AccountDef {
 export interface MonthlyLogEntry {
   date: string; // yyyy-mm(月末時点の記録)
   jpyAccountBalances: Record<string, number>; // 口座id -> 万円
-  jpyIncome: number; // 万円/月
-  jpyExpense: number; // 万円/月
   cnyAssets: number; // 人民元建て資産
   exchangeRate: number; // その月末時点の為替レート(1CNY = ?円)
   memo?: string;
@@ -66,7 +64,6 @@ export interface MonthlyLogEntry {
 export interface LogComparison extends MonthlyLogEntry {
   monthIndex: number;
   jpyAssetsManyen: number;
-  jpySavingsRate: number; // %
   actualAssets: number; // 円換算の合計実績
   // 計画の起点月より前の記録は比較対象となる予測値が存在しないため、いずれもnullになる
   plannedAssets: number | null;
@@ -120,11 +117,6 @@ export function latestLogSnapshot(
   return toSnapshot(latest, excludedAccountIds);
 }
 
-
-export function savingsRatePercent(income: number, expense: number): number {
-  if (income <= 0) return 0;
-  return Math.round(((income - expense) / income) * 1000) / 10;
-}
 
 export function logEntryAssetsTotalYen(
   entry: Pick<MonthlyLogEntry, "jpyAccountBalances" | "cnyAssets" | "exchangeRate">,
@@ -315,7 +307,6 @@ export function compareLogWithPlan(
         ...entry,
         monthIndex,
         jpyAssetsManyen: sumJpyAccountBalances(entry.jpyAccountBalances, excludedAccountIds),
-        jpySavingsRate: savingsRatePercent(entry.jpyIncome, entry.jpyExpense),
         actualAssets: Math.round(actualAssets),
         plannedAssets: planned != null ? Math.round(planned) : null,
         diff: planned != null ? Math.round(actualAssets - planned) : null,
