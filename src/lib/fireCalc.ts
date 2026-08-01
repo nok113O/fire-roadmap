@@ -123,16 +123,6 @@ export function latestLogSnapshot(
   return toSnapshot(latest, excludedAccountIds);
 }
 
-// 前月分の実績記録があればそれを優先し、無ければ最新の記録を使う
-export function currentAssetsSnapshot(
-  log: MonthlyLogEntry[],
-  previousMonth: string,
-  excludedAccountIds?: Set<string>,
-): LatestLogSnapshot | null {
-  const exact = log.find((entry) => entry.date === previousMonth);
-  if (exact) return toSnapshot(exact, excludedAccountIds);
-  return latestLogSnapshot(log, excludedAccountIds);
-}
 
 export function savingsRatePercent(income: number, expense: number): number {
   if (income <= 0) return 0;

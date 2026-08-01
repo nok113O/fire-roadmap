@@ -10,7 +10,7 @@ import type { DividendPlan } from "./lib/dividendCalc";
 import { calculateAgeAt, findSelfMember } from "./lib/familyPlan";
 import type { FamilyMember, LifeEvent, LifeEventPreset } from "./lib/familyPlan";
 import type { AccountDef, FireProfile, MonthlyLogEntry } from "./lib/fireCalc";
-import { addMonths, calculateRoadmap, currentAssetsSnapshot } from "./lib/fireCalc";
+import { calculateRoadmap, latestLogSnapshot } from "./lib/fireCalc";
 import {
   loadAccounts,
   loadDividendPlan,
@@ -50,11 +50,7 @@ function App() {
     [accounts],
   );
 
-  const previousMonth = useMemo(() => addMonths(profile.startDate, -1), [profile.startDate]);
-  const snapshot = useMemo(
-    () => currentAssetsSnapshot(log, previousMonth, excludedAccountIds),
-    [log, previousMonth, excludedAccountIds],
-  );
+  const snapshot = useMemo(() => latestLogSnapshot(log, excludedAccountIds), [log, excludedAccountIds]);
 
   const selfMember = useMemo(() => findSelfMember(familyMembers), [familyMembers]);
 
