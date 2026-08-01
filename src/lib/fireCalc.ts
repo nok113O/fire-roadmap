@@ -136,6 +136,42 @@ export function logEntryAssetsTotalYen(
   return sumJpyAccountBalances(entry.jpyAccountBalances, excludedAccountIds) * MANYEN + entry.cnyAssets * entry.exchangeRate;
 }
 
+export interface EstimatedMonthlySavings {
+  monthlySavingsYen: number;
+  monthsUsed: number;
+  fromDate: string;
+  toDate: string;
+}
+
+// 直近windowMonths分の実績記録から、資産総額の増減を月数で割って平均貯蓄額を逆算する
+// (投資リターンや為替レートの変動も混ざった実績ベースの概算値であることに注意)
+export function estimateMonthlySavingsFromLog(
+  log: MonthlyLogEntry[],
+  windowMonths: number,
+  excludedAccountIds?: Set<string>,
+): EstimatedMonthlySavings | null {
+  const sorted = log.slice().sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length < 2) return null;
+
+  const latest = sorted[sorted.length - 1];
+  const cutoff = addMonths(latest.date, -windowMonths);
+  const windowed = sorted.filter((entry) => entry.date >= cutoff);
+  const base = windowed.length >= 2 ? windowed : sorted;
+
+  const first = base[0];
+  const last = base[base.length - 1];
+  const months = monthsBetween(first.date, last.date);
+  if (months <= 0) return null;
+
+  const deltaYen = logEntryAssetsTotalYen(last, excludedAccountIds) - logEntryAssetsTotalYen(first, excludedAccountIds);
+  return {
+    monthlySavingsYen: deltaYen / months,
+    monthsUsed: months,
+    fromDate: first.date,
+    toDate: last.date,
+  };
+}
+
 export function calculateRequiredAssets(annualExpenses: number, safeWithdrawalRate: number, partTimeIncome = 0): number {
   if (safeWithdrawalRate <= 0) return 0;
   const netAnnualNeed = Math.max(0, annualExpenses - partTimeIncome);

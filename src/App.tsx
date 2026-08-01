@@ -93,6 +93,8 @@ function App() {
           latestSnapshot={snapshot}
           selfMember={selfMember}
           lifeEvents={lifeEvents}
+          log={log}
+          excludedAccountIds={excludedAccountIds}
         />
         <FamilyPlan
           members={familyMembers}
