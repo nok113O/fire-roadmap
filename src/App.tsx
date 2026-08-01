@@ -54,7 +54,9 @@ function App() {
 
   const selfMember = useMemo(() => findSelfMember(familyMembers), [familyMembers]);
 
-  // 前月分の実績記録があればそれを「現在の資産」として計画の起点に使う(無ければ最新の記録、記録が無ければ前提条件の手入力値)
+  // 実績記録があればそれを「現在の資産」として計画の起点に使う(記録が無ければ前提条件の手入力値)
+  // 起点月自体も実績記録の年月に合わせる(そうしないと、実績の資産額を別の月の起点資産として扱ってしまい、
+  // 実績と起点月の間の1ヶ月分の値上がりが計算からすっぽり抜け落ちる)
   // 続柄「本人」の家族メンバーが登録されていれば、その生年月から年齢を自動計算する
   const effectiveProfile: FireProfile = useMemo(() => {
     let result = profile;
@@ -64,10 +66,11 @@ function App() {
         currentAssetsJpyManyen: snapshot.jpyManyen,
         currentAssetsCny: snapshot.cny,
         cnyExchangeRate: snapshot.exchangeRate,
+        startDate: snapshot.date,
       };
     }
     if (selfMember) {
-      result = { ...result, currentAge: calculateAgeAt(selfMember.birthDate, profile.startDate) };
+      result = { ...result, currentAge: calculateAgeAt(selfMember.birthDate, result.startDate) };
     }
     return result;
   }, [profile, snapshot, selfMember]);
@@ -108,7 +111,7 @@ function App() {
         <DividendSimulator plan={dividendPlan} onChange={setDividendPlan} />
         <RoadmapChart roadmap={roadmap} log={log} excludedAccountIds={excludedAccountIds} />
         <MonthlyLog
-          profile={profile}
+          profile={effectiveProfile}
           roadmap={roadmap}
           log={log}
           onChange={setLog}
