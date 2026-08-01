@@ -53,9 +53,11 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lif
     ? latestSnapshot.jpyManyen * 10_000 + latestSnapshot.cny * latestSnapshot.exchangeRate
     : currentAssetsTotalYen(profile);
 
-  const computedAge = selfMember ? calculateAgeAt(selfMember.birthDate, profile.startDate) : null;
+  const effectiveStartDate = latestSnapshot ? latestSnapshot.date : profile.startDate;
 
-  const lifeEventImpactYen = monthlyLifeEventDeltaYen(lifeEvents, profile.startDate);
+  const computedAge = selfMember ? calculateAgeAt(selfMember.birthDate, effectiveStartDate) : null;
+
+  const lifeEventImpactYen = monthlyLifeEventDeltaYen(lifeEvents, effectiveStartDate);
   const effectiveMonthlySavingsYen = profile.monthlySavings + lifeEventImpactYen;
 
   const savingsEstimate = estimateMonthlySavingsFromLog(log, SAVINGS_ESTIMATE_WINDOW_MONTHS, excludedAccountIds);
@@ -144,17 +146,18 @@ export function ProfileForm({ profile, onChange, latestSnapshot, selfMember, lif
         </p>
       )}
       <p className="form-total-hint">
-        起点月({formatYearMonth(profile.startDate)})時点の実効貯蓄額: {formatManyen(effectiveMonthlySavingsYen / 10_000)}/月
+        起点月({formatYearMonth(effectiveStartDate)})時点の実効貯蓄額: {formatManyen(effectiveMonthlySavingsYen / 10_000)}/月
         {lifeEventImpactYen !== 0 &&
           ` (ライフイベントの影響: ${lifeEventImpactYen > 0 ? "+" : ""}${formatManyen(lifeEventImpactYen / 10_000)}/月)`}
       </p>
       <div className="form-grid">
         <label className="form-field">
-          <span className="form-label">計画の起点月</span>
+          <span className="form-label">計画の起点月{latestSnapshot ? "(実績記録から自動設定)" : ""}</span>
           <div className="form-input-wrap">
             <input
               type="month"
-              value={profile.startDate}
+              disabled={!!latestSnapshot}
+              value={effectiveStartDate}
               onChange={(e) => onChange({ ...profile, startDate: e.target.value })}
             />
           </div>
