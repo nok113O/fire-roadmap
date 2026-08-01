@@ -13,8 +13,6 @@ interface Props {
   onAccountsChange: (accounts: AccountDef[]) => void;
 }
 
-const BULK_IMPORT_ACCOUNT_ID = "_bulk";
-
 function upsertEntries(log: MonthlyLogEntry[], entries: MonthlyLogEntry[]): MonthlyLogEntry[] {
   const byDate = new Map(log.map((entry) => [entry.date, entry]));
   for (const entry of entries) {
@@ -27,8 +25,12 @@ function makeAccountId(): string {
   return `acc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
-// 1行 = "年月,日本資産合計(万円),中国資産(元),為替レート[,メモ]" (タブ/カンマ/スペース区切り)
-function parseBulkImportText(text: string): { entries: MonthlyLogEntry[]; errorLines: number[] } {
+// 1行 = "年月,口座1(万円),口座2(万円),...,中国資産(元),為替レート[,メモ]" (タブ/カンマ/スペース区切り)
+// 口座の並び順は「口座を管理」に表示されている順序に対応
+function parseBulkImportText(
+  text: string,
+  accounts: AccountDef[],
+): { entries: MonthlyLogEntry[]; errorLines: number[] } {
   const entries: MonthlyLogEntry[] = [];
   const errorLines: number[] = [];
 
@@ -38,19 +40,31 @@ function parseBulkImportText(text: string): { entries: MonthlyLogEntry[]; errorL
     .filter((line) => line.length > 0)
     .forEach((line, index) => {
       const cols = line.split(/[,\t]+/).map((c) => c.trim());
-      const [date, jpy, cny, rate, ...memoParts] = cols;
-      const jpyManyen = Number(jpy);
-      const cnyAssets = Number(cny);
-      const exchangeRate = Number(rate);
+      const [date, ...rest] = cols;
+      const accountValues = rest.slice(0, accounts.length).map(Number);
+      const cnyAssets = Number(rest[accounts.length]);
+      const exchangeRate = Number(rest[accounts.length + 1]);
+      const memoParts = rest.slice(accounts.length + 2);
 
-      if (!/^\d{4}-\d{2}$/.test(date ?? "") || [jpyManyen, cnyAssets, exchangeRate].some(Number.isNaN)) {
+      if (
+        !/^\d{4}-\d{2}$/.test(date ?? "") ||
+        accountValues.length !== accounts.length ||
+        accountValues.some(Number.isNaN) ||
+        Number.isNaN(cnyAssets) ||
+        Number.isNaN(exchangeRate)
+      ) {
         errorLines.push(index + 1);
         return;
       }
 
+      const jpyAccountBalances: Record<string, number> = {};
+      accounts.forEach((account, i) => {
+        jpyAccountBalances[account.id] = accountValues[i];
+      });
+
       entries.push({
         date,
-        jpyAccountBalances: { [BULK_IMPORT_ACCOUNT_ID]: jpyManyen },
+        jpyAccountBalances,
         cnyAssets,
         exchangeRate,
         memo: memoParts.join(" ") || undefined,
@@ -123,7 +137,7 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
   };
 
   const runBulkImport = () => {
-    const { entries, errorLines } = parseBulkImportText(bulkText);
+    const { entries, errorLines } = parseBulkImportText(bulkText, accounts);
     if (entries.length > 0) {
       onChange(upsertEntries(log, entries));
     }
@@ -226,16 +240,16 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
       <details className="bulk-import">
         <summary>過去実績をまとめて取り込む</summary>
         <p className="bulk-import-hint">
-          1行につき1か月分を「年月,日本資産合計(万円),中国資産(元),為替レート」の形式(カンマまたはタブ区切り)で貼り付けてください。口座別の内訳は付きません(合計のみ)。
+          1行につき1か月分を「年月,{accounts.map((a) => a.name).join(",")},中国資産(元),為替レート」の形式(カンマまたはタブ区切り、口座の並び順は上の「口座を管理」と同じ)で貼り付けてください。
           <br />
-          例: 2023-01,1371,50802,22.0
+          例: 2026-01,{accounts.map(() => "0").join(",")},369031,22.0
         </p>
         <textarea
           className="bulk-import-textarea"
           rows={6}
           value={bulkText}
           onChange={(e) => setBulkText(e.target.value)}
-          placeholder={"2023-01,1371,50802,22.0\n2023-02,1390,58596,22.0"}
+          placeholder={`2026-01,${accounts.map(() => "0").join(",")},369031,22.0`}
         />
         <div className="bulk-import-actions">
           <button type="button" className="btn-primary" onClick={runBulkImport} disabled={bulkText.trim() === ""}>
