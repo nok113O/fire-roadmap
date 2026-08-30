@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { AccountDef, FireProfile, MonthlyLogEntry, RoadmapResult } from "../lib/fireCalc";
 import { compareLogWithPlan, currentYearMonth } from "../lib/fireCalc";
 import { formatYearMonth, formatYen } from "../lib/format";
@@ -61,6 +61,7 @@ function parseBulkImportText(text: string): { entries: MonthlyLogEntry[]; errorL
 }
 
 export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccountsChange }: Props) {
+  const formRef = useRef<HTMLDivElement>(null);
   const [date, setDate] = useState(currentYearMonth());
   const [accountInputs, setAccountInputs] = useState<Record<string, string>>({});
   const [cnyAssets, setCnyAssets] = useState("");
@@ -72,6 +73,7 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
 
   const excludedAccountIds = new Set(accounts.filter((a) => a.excludeFromTotal).map((a) => a.id));
   const comparisons = compareLogWithPlan(profile, roadmap, log, excludedAccountIds).slice().reverse();
+  const isEditingExisting = log.some((entry) => entry.date === date);
 
   const addAccount = () => {
     const name = newAccountName.trim();
@@ -93,7 +95,9 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
   };
 
   const addEntry = () => {
-    const jpyAccountBalances: Record<string, number> = {};
+    // 口座を管理に無い(旧形式の一括インポートなど)残高キーは、編集で上書きしても消さずに引き継ぐ
+    const existing = log.find((entry) => entry.date === date);
+    const jpyAccountBalances: Record<string, number> = { ...existing?.jpyAccountBalances };
     for (const account of accounts) {
       jpyAccountBalances[account.id] = Number(accountInputs[account.id] ?? 0) || 0;
     }
@@ -113,6 +117,25 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
         },
       ]),
     );
+    setDate(currentYearMonth());
+    setAccountInputs({});
+    setCnyAssets("");
+    setMemo("");
+  };
+
+  const loadEntryForEdit = (entry: MonthlyLogEntry) => {
+    setDate(entry.date);
+    setAccountInputs(
+      Object.fromEntries(accounts.map((account) => [account.id, String(entry.jpyAccountBalances[account.id] ?? 0)])),
+    );
+    setCnyAssets(String(entry.cnyAssets));
+    setExchangeRate(String(entry.exchangeRate));
+    setMemo(entry.memo ?? "");
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const cancelEdit = () => {
+    setDate(currentYearMonth());
     setAccountInputs({});
     setCnyAssets("");
     setMemo("");
@@ -176,9 +199,9 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
         </div>
       </details>
 
-      <div className="log-form">
+      <div className="log-form" ref={formRef}>
         <label className="form-field">
-          <span className="form-label">対象月</span>
+          <span className="form-label">対象月{isEditingExisting ? "(既存の記録を編集中)" : ""}</span>
           <input type="month" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="form-field">
@@ -219,8 +242,13 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
           <input type="text" value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="例: ボーナス反映" />
         </label>
         <button type="button" className="btn-primary" onClick={addEntry}>
-          記録する
+          {isEditingExisting ? "更新する" : "記録する"}
         </button>
+        {isEditingExisting && (
+          <button type="button" className="btn-icon" onClick={cancelEdit}>
+            編集をキャンセル
+          </button>
+        )}
       </div>
 
       <details className="bulk-import">
@@ -279,6 +307,9 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
                   <td>{row.progressRate}%</td>
                   <td className="memo-cell">{row.memo ?? ""}</td>
                   <td>
+                    <button type="button" className="btn-icon" onClick={() => loadEntryForEdit(row)} aria-label="編集">
+                      編集
+                    </button>
                     <button type="button" className="btn-icon" onClick={() => removeEntry(row.date)} aria-label="削除">
                       削除
                     </button>
