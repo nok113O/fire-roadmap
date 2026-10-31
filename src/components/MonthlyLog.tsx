@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { AccountDef, FireProfile, MonthlyLogEntry, RoadmapResult } from "../lib/fireCalc";
-import { compareLogWithPlan, currentYearMonth } from "../lib/fireCalc";
+import { addMonths, compareLogWithPlan, currentYearMonth } from "../lib/fireCalc";
 import { formatYearMonth, formatYen } from "../lib/format";
 import { CommaNumberInput } from "./CommaNumberInput";
 
@@ -74,6 +74,7 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
   const excludedAccountIds = new Set(accounts.filter((a) => a.excludeFromTotal).map((a) => a.id));
   const comparisons = compareLogWithPlan(profile, roadmap, log, excludedAccountIds).slice().reverse();
   const isEditingExisting = log.some((entry) => entry.date === date);
+  const previousEntry = date ? log.find((entry) => entry.date === addMonths(date, -1)) : undefined;
 
   const addAccount = () => {
     const name = newAccountName.trim();
@@ -205,11 +206,11 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
           <input type="month" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="form-field">
-          <span className="form-label">中国 資産</span>
+          <span className="form-label">中国 資産{previousEntry ? `(前月: ${previousEntry.cnyAssets.toLocaleString("ja-JP")})` : ""}</span>
           <CommaNumberInput placeholder="元(CNY)" value={cnyAssets} onChange={setCnyAssets} />
         </label>
         <label className="form-field">
-          <span className="form-label">為替レート</span>
+          <span className="form-label">為替レート{previousEntry ? `(前月: ${previousEntry.exchangeRate})` : ""}</span>
           <input
             type="number"
             step={0.01}
@@ -226,6 +227,7 @@ export function MonthlyLog({ profile, roadmap, log, onChange, accounts, onAccoun
             <span className="form-label">
               {account.name}
               {account.excludeFromTotal ? "(FIRE計算対象外)" : ""}
+              {previousEntry ? `(前月: ${(previousEntry.jpyAccountBalances[account.id] ?? 0).toLocaleString("ja-JP")}万円)` : ""}
             </span>
             <CommaNumberInput
               placeholder="万円"
